@@ -6,7 +6,7 @@ DOMAIN: Dict[str, str] = {
  role as a family member (such as 'son', 'uncle', 'wife', ...), their profession (such as 'director'), and the location
  where they live or work. Pay attention to the spelling of the names.""",  # noqa: E501
     "hotpotqa": """Analyse the following passage and identify all the entities mentioned in it and their relationships. Your goal is to create an RDF (Resource Description Framework) graph from the given text.
- Pay attention to the spelling of the entity names."""
+ Pay attention to the spelling of the entity names.""",
 }
 
 QUERIES: Dict[str, List[str]] = {
@@ -20,8 +20,8 @@ QUERIES: Dict[str, List[str]] = {
         "Are Christopher Nolan and Sathish Kalathil both film directors?",
         "What language were books being translated into during the era of Haymo of Faversham?",
         "Who directed the film that was shot in or around Leland, North Carolina in 1986?",
-        "Who wrote a song after attending a luau in the Koolauloa District on the island of Oahu in Honolulu County?"
-    ]
+        "Who wrote a song after attending a luau in the Koolauloa District on the island of Oahu in Honolulu County?",
+    ],
 }
 
 ENTITY_TYPES: Dict[str, List[str]] = {
@@ -41,6 +41,6 @@ ENTITY_TYPES: Dict[str, List[str]] = {
         "creative_work",
         "profession",
         "event",
-        "year"
+        "year",
     ],
 }

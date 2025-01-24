@@ -17,7 +17,17 @@ from typing import (
 
 from scipy.sparse import csr_matrix  # type: ignore
 
-from fast_graphrag._types import GTBlob, GTEdge, GTEmbedding, GTId, GTKey, GTNode, GTValue, TIndex, TScore
+from fast_graphrag._types import (
+    GTBlob,
+    GTEdge,
+    GTEmbedding,
+    GTId,
+    GTKey,
+    GTNode,
+    GTValue,
+    TIndex,
+    TScore,
+)
 from fast_graphrag._utils import logger
 
 from ._namespace import Namespace
@@ -76,7 +86,9 @@ class BaseStorage:
             if self._in_progress is not False:
                 await self._insert_done()
             else:
-                logger.warning(f"[{self.__class__.__name__}] No insert operations to commit.")
+                logger.warning(
+                    f"[{self.__class__.__name__}] No insert operations to commit."
+                )
 
     @final
     async def query_done(self) -> None:
@@ -87,7 +99,9 @@ class BaseStorage:
             if self._in_progress is not False:
                 await self._query_done()
             else:
-                logger.warning(f"[{self.__class__.__name__}] No query operations to commit.")
+                logger.warning(
+                    f"[{self.__class__.__name__}] No query operations to commit."
+                )
 
     async def _insert_start(self):
         """Prepare the storage for inserting."""
@@ -135,7 +149,9 @@ class BaseIndexedKeyValueStorage(BaseStorage, Generic[GTKey, GTValue]):
     async def get(self, keys: Iterable[GTKey]) -> Iterable[Optional[GTValue]]:
         raise NotImplementedError
 
-    async def get_by_index(self, indices: Iterable[TIndex]) -> Iterable[Optional[GTValue]]:
+    async def get_by_index(
+        self, indices: Iterable[TIndex]
+    ) -> Iterable[Optional[GTValue]]:
         raise NotImplementedError
 
     async def get_index(self, keys: Iterable[GTKey]) -> Iterable[Optional[TIndex]]:
@@ -144,7 +160,9 @@ class BaseIndexedKeyValueStorage(BaseStorage, Generic[GTKey, GTValue]):
     async def upsert(self, keys: Iterable[GTKey], values: Iterable[GTValue]) -> None:
         raise NotImplementedError
 
-    async def upsert_by_index(self, indices: Iterable[TIndex], values: Iterable[GTValue]) -> None:
+    async def upsert_by_index(
+        self, indices: Iterable[TIndex], values: Iterable[GTValue]
+    ) -> None:
         raise NotImplementedError
 
     async def delete(self, keys: Iterable[GTKey]) -> None:
@@ -184,7 +202,10 @@ class BaseVectorStorage(BaseStorage, Generic[GTId, GTEmbedding]):
         raise NotImplementedError
 
     async def score_all(
-        self, embeddings: Iterable[GTEmbedding], top_k: int = 1, threshold: Optional[float] = None
+        self,
+        embeddings: Iterable[GTEmbedding],
+        top_k: int = 1,
+        threshold: Optional[float] = None,
     ) -> csr_matrix:
         """Score all embeddings against the given queries.
 
@@ -212,7 +233,9 @@ class BaseGraphStorage(BaseStorage, Generic[GTNode, GTEdge, GTId]):
     async def get_edge_ids(self) -> Iterable[GTId]:
         raise NotImplementedError
 
-    async def get_node(self, node: Union[GTNode, GTId]) -> Union[Tuple[GTNode, TIndex], Tuple[None, None]]:
+    async def get_node(
+        self, node: Union[GTNode, GTId]
+    ) -> Union[Tuple[GTNode, TIndex], Tuple[None, None]]:
         raise NotImplementedError
 
     async def get_all_edges(self) -> Iterable[GTEdge]:
@@ -234,10 +257,14 @@ class BaseGraphStorage(BaseStorage, Generic[GTNode, GTEdge, GTId]):
     async def get_edge_by_index(self, index: TIndex) -> Union[GTEdge, None]:
         raise NotImplementedError
 
-    async def upsert_node(self, node: GTNode, node_index: Union[TIndex, None]) -> TIndex:
+    async def upsert_node(
+        self, node: GTNode, node_index: Union[TIndex, None]
+    ) -> TIndex:
         raise NotImplementedError
 
-    async def upsert_edge(self, edge: GTEdge, edge_index: Union[TIndex, None]) -> TIndex:
+    async def upsert_edge(
+        self, edge: GTEdge, edge_index: Union[TIndex, None]
+    ) -> TIndex:
         raise NotImplementedError
 
     async def insert_edges(
@@ -248,7 +275,9 @@ class BaseGraphStorage(BaseStorage, Generic[GTNode, GTEdge, GTId]):
     ) -> List[TIndex]:
         raise NotImplementedError
 
-    async def are_neighbours(self, source_node: Union[GTId, TIndex], target_node: Union[GTId, TIndex]) -> bool:
+    async def are_neighbours(
+        self, source_node: Union[GTId, TIndex], target_node: Union[GTId, TIndex]
+    ) -> bool:
         raise NotImplementedError
 
     async def delete_edges_by_index(self, indices: Iterable[TIndex]) -> None:
@@ -258,7 +287,10 @@ class BaseGraphStorage(BaseStorage, Generic[GTNode, GTEdge, GTId]):
         raise NotImplementedError
 
     async def get_relationships_to_chunks_map(
-        self, key: str, key_to_index_fn: Callable[[Iterable[GTKey]], Awaitable[Iterable[TIndex]]], num_chunks: int
+        self,
+        key: str,
+        key_to_index_fn: Callable[[Iterable[GTKey]], Awaitable[Iterable[TIndex]]],
+        num_chunks: int,
     ) -> csr_matrix:
         raise NotImplementedError
 

@@ -116,7 +116,8 @@ class TestNamespace(unittest.TestCase):
         with open(os.path.join(self.test_dir, "test_namespace_resource"), "w") as f:
             f.write("test")
         self.assertEqual(
-            os.path.join("test_workspace", "test_namespace_resource"), self.namespace.get_load_path("resource")
+            os.path.join("test_workspace", "test_namespace_resource"),
+            self.namespace.get_load_path("resource"),
         )
         del self.workspace
         gc.collect()
@@ -129,7 +130,9 @@ class TestNamespace(unittest.TestCase):
         self.namespace = Namespace(self.workspace, "test_namespace")
         self.workspace.current_load_checkpoint = 1
         load_path = self.namespace.get_load_path("resource")
-        self.assertEqual(load_path, os.path.join(self.test_dir, "1", "test_namespace_resource"))
+        self.assertEqual(
+            load_path, os.path.join(self.test_dir, "1", "test_namespace_resource")
+        )
 
         del self.workspace
         gc.collect()

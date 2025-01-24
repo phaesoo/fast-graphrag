@@ -21,7 +21,10 @@ class BasePolicy:
 @dataclass
 class BaseNodeUpsertPolicy(BasePolicy, Generic[GTNode, GTId]):
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, GTEdge, GTId], source_nodes: Iterable[GTNode]
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[GTNode, GTEdge, GTId],
+        source_nodes: Iterable[GTNode],
     ) -> Tuple[BaseGraphStorage[GTNode, GTEdge, GTId], Iterable[Tuple[TIndex, GTNode]]]:
         raise NotImplementedError
 
@@ -29,7 +32,10 @@ class BaseNodeUpsertPolicy(BasePolicy, Generic[GTNode, GTId]):
 @dataclass
 class BaseEdgeUpsertPolicy(BasePolicy, Generic[GTEdge, GTId]):
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, GTEdge, GTId], source_edges: Iterable[GTEdge]
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[GTNode, GTEdge, GTId],
+        source_edges: Iterable[GTEdge],
     ) -> Tuple[BaseGraphStorage[GTNode, GTEdge, GTId], Iterable[Tuple[TIndex, GTEdge]]]:
         raise NotImplementedError
 

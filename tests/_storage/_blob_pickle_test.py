@@ -24,7 +24,11 @@ class TestPickleBlobStorage(unittest.IsolatedAsyncioTestCase):
         await self.storage.set(blob)
         self.assertEqual(self.storage._data, blob)
 
-    @patch("builtins.open", new_callable=mock_open, read_data=pickle.dumps({"key": "value"}))
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data=pickle.dumps({"key": "value"}),
+    )
     async def test_insert_start_with_existing_file(self, mock_open):
         await self.storage._insert_start()
         self.assertEqual(self.storage._data, {"key": "value"})
@@ -43,7 +47,11 @@ class TestPickleBlobStorage(unittest.IsolatedAsyncioTestCase):
         mock_open.assert_called_once_with("blob_data.pkl", "wb")
         mock_open().write.assert_called_once()
 
-    @patch("builtins.open", new_callable=mock_open, read_data=pickle.dumps({"key": "value"}))
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data=pickle.dumps({"key": "value"}),
+    )
     async def test_query_start_with_existing_file(self, mock_open):
         await self.storage._query_start()
         self.assertEqual(self.storage._data, {"key": "value"})

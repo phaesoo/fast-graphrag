@@ -27,11 +27,17 @@ class Workspace:
             os.makedirs(working_dir)
 
         self.checkpoints = sorted(
-            (int(x.name) for x in os.scandir(self.working_dir) if x.is_dir() and not x.name.startswith("0__err_")),
+            (
+                int(x.name)
+                for x in os.scandir(self.working_dir)
+                if x.is_dir() and not x.name.startswith("0__err_")
+            ),
             reverse=True,
         )
         if self.checkpoints:
-            self.current_load_checkpoint = checkpoint if checkpoint else self.checkpoints[0]
+            self.current_load_checkpoint = (
+                checkpoint if checkpoint else self.checkpoints[0]
+            )
         else:
             self.current_load_checkpoint = checkpoint
         self.save_checkpoint: Optional[int] = None
@@ -44,7 +50,10 @@ class Workspace:
             os.rename(old_path, new_path)
 
         if self.keep_n > 0:
-            checkpoints = sorted((x.name for x in os.scandir(self.working_dir) if x.is_dir()), reverse=True)
+            checkpoints = sorted(
+                (x.name for x in os.scandir(self.working_dir) if x.is_dir()),
+                reverse=True,
+            )
             for checkpoint in checkpoints[self.keep_n + 1 :]:
                 shutil.rmtree(os.path.join(self.working_dir, str(checkpoint)))
 
@@ -53,10 +62,12 @@ class Workspace:
 
     def get_load_path(self) -> Optional[str]:
         load_path = self.get_path(self.working_dir, self.current_load_checkpoint)
-        if load_path == self.working_dir and len([x for x in os.scandir(load_path) if x.is_file()]) == 0:
+        if (
+            load_path == self.working_dir
+            and len([x for x in os.scandir(load_path) if x.is_file()]) == 0
+        ):
             return None
         return load_path
-
 
     def get_save_path(self) -> str:
         if self.save_checkpoint is None:
@@ -78,11 +89,18 @@ class Workspace:
         # List all directories in the working directory and select the one
         # with the smallest number greater then the current load checkpoint.
         try:
-            self.current_load_checkpoint = next(x for x in self.checkpoints if x < self.current_load_checkpoint)
-            logger.warning("Rolling back to checkpoint: %s", self.current_load_checkpoint)
+            self.current_load_checkpoint = next(
+                x for x in self.checkpoints if x < self.current_load_checkpoint
+            )
+            logger.warning(
+                "Rolling back to checkpoint: %s", self.current_load_checkpoint
+            )
         except (StopIteration, ValueError):
             self.current_load_checkpoint = None
-            logger.warning("No checkpoints to rollback to. Last checkpoint tried: %s", self.current_load_checkpoint)
+            logger.warning(
+                "No checkpoints to rollback to. Last checkpoint tried: %s",
+                self.current_load_checkpoint,
+            )
 
         return True
 
@@ -96,7 +114,9 @@ class Workspace:
                     self.failed_checkpoints.append(str(self.current_load_checkpoint))
                 if self._rollback() is False:
                     break
-        raise InvalidStorageError("No valid checkpoints to load or default storages cannot be created.")
+        raise InvalidStorageError(
+            "No valid checkpoints to load or default storages cannot be created."
+        )
 
 
 class Namespace:
@@ -105,12 +125,18 @@ class Namespace:
         self.workspace = workspace
 
     def get_load_path(self, resource_name: str) -> Optional[str]:
-        assert self.namespace is not None, "Namespace must be set to get resource load path."
+        assert (
+            self.namespace is not None
+        ), "Namespace must be set to get resource load path."
         load_path = self.workspace.get_load_path()
         if load_path is None:
             return None
         return os.path.join(load_path, f"{self.namespace}_{resource_name}")
 
     def get_save_path(self, resource_name: str) -> str:
-        assert self.namespace is not None, "Namespace must be set to get resource save path."
-        return os.path.join(self.workspace.get_save_path(), f"{self.namespace}_{resource_name}")
+        assert (
+            self.namespace is not None
+        ), "Namespace must be set to get resource save path."
+        return os.path.join(
+            self.workspace.get_save_path(), f"{self.namespace}_{resource_name}"
+        )

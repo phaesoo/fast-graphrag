@@ -26,7 +26,9 @@ class PickleIndexedKeyValueStorage(BaseIndexedKeyValueStorage[GTKey, GTValue]):
     async def get(self, keys: Iterable[GTKey]) -> Iterable[Optional[GTValue]]:
         return (self._data.get(self._key_to_index.get(key, None), None) for key in keys)
 
-    async def get_by_index(self, indices: Iterable[TIndex]) -> Iterable[Optional[GTValue]]:
+    async def get_by_index(
+        self, indices: Iterable[TIndex]
+    ) -> Iterable[Optional[GTValue]]:
         return (self._data.get(index, None) for index in indices)
 
     async def get_index(self, keys: Iterable[GTKey]) -> Iterable[Optional[TIndex]]:
@@ -81,7 +83,9 @@ class PickleIndexedKeyValueStorage(BaseIndexedKeyValueStorage[GTKey, GTValue]):
             if data_file_name:
                 try:
                     with open(data_file_name, "rb") as f:
-                        self._data, self._free_indices, self._key_to_index = pickle.load(f)
+                        self._data, self._free_indices, self._key_to_index = (
+                            pickle.load(f)
+                        )
                         logger.debug(
                             f"Loaded {len(self._data)} elements from indexed key-value storage '{data_file_name}'."
                         )
@@ -90,7 +94,9 @@ class PickleIndexedKeyValueStorage(BaseIndexedKeyValueStorage[GTKey, GTValue]):
                     logger.error(t)
                     raise InvalidStorageError(t) from e
             else:
-                logger.info(f"No data file found for key-vector storage '{data_file_name}'. Loading empty storage.")
+                logger.info(
+                    f"No data file found for key-vector storage '{data_file_name}'. Loading empty storage."
+                )
                 self._data = {}
                 self._free_indices = []
                 self._key_to_index = {}
@@ -107,7 +113,9 @@ class PickleIndexedKeyValueStorage(BaseIndexedKeyValueStorage[GTKey, GTValue]):
             try:
                 with open(data_file_name, "wb") as f:
                     pickle.dump((self._data, self._free_indices, self._key_to_index), f)
-                    logger.debug(f"Saving {len(self._data)} elements to indexed key-value storage '{data_file_name}'.")
+                    logger.debug(
+                        f"Saving {len(self._data)} elements to indexed key-value storage '{data_file_name}'."
+                    )
             except Exception as e:
                 t = f"Error saving data file for key-vector storage '{data_file_name}': {e}"
                 logger.error(t)
@@ -128,7 +136,9 @@ class PickleIndexedKeyValueStorage(BaseIndexedKeyValueStorage[GTKey, GTValue]):
                 logger.error(t)
                 raise InvalidStorageError(t) from e
         else:
-            logger.warning(f"No data file found for key-vector storage '{data_file_name}'. Loading empty storage.")
+            logger.warning(
+                f"No data file found for key-vector storage '{data_file_name}'. Loading empty storage."
+            )
             self._data = {}
             self._free_indices = []
             self._key_to_index = {}

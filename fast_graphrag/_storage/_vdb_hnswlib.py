@@ -62,7 +62,9 @@ class HNSWVectorStorage(BaseVectorStorage[GTId, GTEmbedding]):
 
         if metadata:
             self._metadata.update(dict(zip(ids, metadata)))
-        self._index.add_items(data=embeddings, ids=ids, num_threads=self.config.num_threads)
+        self._index.add_items(
+            data=embeddings, ids=ids, num_threads=self.config.num_threads
+        )
 
     async def get_knn(
         self, embeddings: Iterable[GTEmbedding], top_k: int
@@ -78,18 +80,25 @@ class HNSWVectorStorage(BaseVectorStorage[GTId, GTEmbedding]):
             self._index.set_ef(top_k)
 
         # distances is [0, 2] (best, worst)
-        ids, distances = self._index.knn_query(data=embeddings, k=top_k, num_threads=self.config.num_threads)
+        ids, distances = self._index.knn_query(
+            data=embeddings, k=top_k, num_threads=self.config.num_threads
+        )
 
         return ids, 1.0 - np.array(distances, dtype=TScore) * 0.5
 
     async def score_all(
-        self, embeddings: Iterable[GTEmbedding], top_k: int = 1, threshold: Optional[float] = None
+        self,
+        embeddings: Iterable[GTEmbedding],
+        top_k: int = 1,
+        threshold: Optional[float] = None,
     ) -> csr_matrix:
         if not isinstance(embeddings, np.ndarray):
             embeddings = np.array(list(embeddings), dtype=np.float32)
 
         if embeddings.size == 0 or self.size == 0:
-            logger.warning(f"No provided embeddings ({embeddings.size}) or empty index ({self.size}).")
+            logger.warning(
+                f"No provided embeddings ({embeddings.size}) or empty index ({self.size})."
+            )
             return csr_matrix((0, self.size))
 
         top_k = min(top_k, self.size)
@@ -97,7 +106,9 @@ class HNSWVectorStorage(BaseVectorStorage[GTId, GTEmbedding]):
             self._index.set_ef(top_k)
 
         # distances is [0, 2] (best, worst)
-        ids, distances = self._index.knn_query(data=embeddings, k=top_k, num_threads=self.config.num_threads)
+        ids, distances = self._index.knn_query(
+            data=embeddings, k=top_k, num_threads=self.config.num_threads
+        )
 
         ids = np.array(ids)
         scores = 1.0 - np.array(distances, dtype=TScore) * 0.5
@@ -120,8 +131,12 @@ class HNSWVectorStorage(BaseVectorStorage[GTId, GTEmbedding]):
         self._index = hnswlib.Index(space="cosine", dim=self.embedding_dim)  # type: ignore
 
         if self.namespace:
-            index_file_name = self.namespace.get_load_path(self.RESOURCE_NAME.format(self.embedding_dim))
-            metadata_file_name = self.namespace.get_load_path(self.RESOURCE_METADATA_NAME)
+            index_file_name = self.namespace.get_load_path(
+                self.RESOURCE_NAME.format(self.embedding_dim)
+            )
+            metadata_file_name = self.namespace.get_load_path(
+                self.RESOURCE_METADATA_NAME
+            )
 
             if index_file_name and metadata_file_name:
                 try:
@@ -137,28 +152,36 @@ class HNSWVectorStorage(BaseVectorStorage[GTId, GTEmbedding]):
                     logger.error(t)
                     raise InvalidStorageError(t) from e
             else:
-                logger.info(f"No data file found for vectordb storage '{index_file_name}'. Loading empty vectordb.")
+                logger.info(
+                    f"No data file found for vectordb storage '{index_file_name}'. Loading empty vectordb."
+                )
         else:
             logger.debug("Creating new volatile vectordb storage.")
         self._index.init_index(
             max_elements=self.INITIAL_MAX_ELEMENTS,
             ef_construction=self.config.ef_construction,
             M=self.config.M,
-            allow_replace_deleted=True
+            allow_replace_deleted=True,
         )
         self._index.set_ef(self.config.ef_search)
         self._metadata = {}
 
     async def _insert_done(self):
         if self.namespace:
-            index_file_name = self.namespace.get_save_path(self.RESOURCE_NAME.format(self.embedding_dim))
-            metadata_file_name = self.namespace.get_save_path(self.RESOURCE_METADATA_NAME)
+            index_file_name = self.namespace.get_save_path(
+                self.RESOURCE_NAME.format(self.embedding_dim)
+            )
+            metadata_file_name = self.namespace.get_save_path(
+                self.RESOURCE_METADATA_NAME
+            )
 
             try:
                 self._index.save_index(index_file_name)
                 with open(metadata_file_name, "wb") as f:
                     pickle.dump(self._metadata, f)
-                logger.debug(f"Saving {self.size} elements from vectordb storage '{index_file_name}'.")
+                logger.debug(
+                    f"Saving {self.size} elements from vectordb storage '{index_file_name}'."
+                )
             except Exception as e:
                 t = f"Error saving vectordb storage from {index_file_name}: {e}"
                 logger.error(t)
@@ -168,27 +191,33 @@ class HNSWVectorStorage(BaseVectorStorage[GTId, GTEmbedding]):
         assert self.namespace, "Loading a vectordb requires a namespace."
         self._index = hnswlib.Index(space="cosine", dim=self.embedding_dim)  # type: ignore
 
-        index_file_name = self.namespace.get_load_path(self.RESOURCE_NAME.format(self.embedding_dim))
+        index_file_name = self.namespace.get_load_path(
+            self.RESOURCE_NAME.format(self.embedding_dim)
+        )
         metadata_file_name = self.namespace.get_load_path(self.RESOURCE_METADATA_NAME)
         if index_file_name and metadata_file_name:
             try:
                 self._index.load_index(index_file_name, allow_replace_deleted=True)
                 with open(metadata_file_name, "rb") as f:
                     self._metadata = pickle.load(f)
-                logger.debug(f"Loaded {self.size} elements from vectordb storage '{index_file_name}'.")
+                logger.debug(
+                    f"Loaded {self.size} elements from vectordb storage '{index_file_name}'."
+                )
 
-                return # All good
+                return  # All good
             except Exception as e:
                 t = f"Error loading vectordb storage from {index_file_name}: {e}"
                 logger.error(t)
                 raise InvalidStorageError(t) from e
         else:
-            logger.warning(f"No data file found for vectordb storage '{index_file_name}'. Loading empty vectordb.")
+            logger.warning(
+                f"No data file found for vectordb storage '{index_file_name}'. Loading empty vectordb."
+            )
         self._index.init_index(
             max_elements=self.INITIAL_MAX_ELEMENTS,
             ef_construction=self.config.ef_construction,
             M=self.config.M,
-            allow_replace_deleted=True
+            allow_replace_deleted=True,
         )
         self._index.set_ef(self.config.ef_search)
         self._metadata = {}

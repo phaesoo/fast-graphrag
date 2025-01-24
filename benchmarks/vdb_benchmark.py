@@ -17,7 +17,10 @@ from fast_graphrag._models import TAnswer
 from fast_graphrag._storage._base import BaseStorage
 from fast_graphrag._storage._ikv_pickle import PickleIndexedKeyValueStorage
 from fast_graphrag._storage._namespace import Workspace
-from fast_graphrag._storage._vdb_hnswlib import HNSWVectorStorage, HNSWVectorStorageConfig
+from fast_graphrag._storage._vdb_hnswlib import (
+    HNSWVectorStorage,
+    HNSWVectorStorageConfig,
+)
 from fast_graphrag._utils import get_event_loop
 
 
@@ -32,7 +35,9 @@ async def format_and_send_prompt(
     formatted_prompt = prompt.format(**format_kwargs)
 
     # Send the formatted prompt to the LLM
-    response, rest = await llm.send_message(prompt=formatted_prompt, response_model=TAnswer, **args)
+    response, rest = await llm.send_message(
+        prompt=formatted_prompt, response_model=TAnswer, **args
+    )
     return response.answer, rest
 
 
@@ -53,7 +58,9 @@ class VectorStorage:
             embedding_dim=1536,
         )
         self.embedder = OpenAIEmbeddingService()
-        self.ikv = PickleIndexedKeyValueStorage[int, Any](config=None, namespace=workspace.make_for("ikv"))
+        self.ikv = PickleIndexedKeyValueStorage[int, Any](
+            config=None, namespace=workspace.make_for("ikv")
+        )
 
     async def upsert(self, ids: Iterable[int], data: Iterable[Tuple[str, str]]) -> None:
         """Add or update embeddings in the storage."""
@@ -68,7 +75,11 @@ class VectorStorage:
         embedding = await self.embedder.encode([query])
         ids, _ = await self.vdb.get_knn(embedding, top_k)
 
-        return [c for c in await self.ikv.get([int(i) for i in np.array(ids).flatten()]) if c is not None]
+        return [
+            c
+            for c in await self.ikv.get([int(i) for i in np.array(ids).flatten()])
+            if c is not None
+        ]
 
     async def query_start(self):
         """Load the storage for querying."""
@@ -144,7 +155,7 @@ class LLMService:
     4. Write the response to the user query based on the information you have gathered. Be very concise and answer the user query directly. If the response cannot be inferred from the input data, just say no relevant information was found. Do not make anything up or add unrelevant information.
 
     Answer:
-    """ # noqa: E501
+    """  # noqa: E501
 
     def __init__(self):
         """Create the LLM service."""
@@ -154,7 +165,9 @@ class LLMService:
         """Ask a query to the LLM."""
         return (
             await format_and_send_prompt(
-                prompt=self.PROMPT, llm=self.llm, format_kwargs={"context": context, "query": query}
+                prompt=self.PROMPT,
+                llm=self.llm,
+                format_kwargs={"context": context, "query": query},
             )
         )[0]
 
@@ -164,11 +177,16 @@ async def upsert_to_vdb(data: List[Tuple[str, str]], working_dir: str = "./"):
     workspace = Workspace(working_dir)
     storage = VectorStorage(workspace)
     await storage.insert_start()
-    await storage.upsert([xxhash.xxh64(corpus).intdigest() for _, (title, corpus) in data], [(title, corpus) for _, (title, corpus) in data])
+    await storage.upsert(
+        [xxhash.xxh64(corpus).intdigest() for _, (title, corpus) in data],
+        [(title, corpus) for _, (title, corpus) in data],
+    )
     await storage.insert_done()
 
 
-async def query_from_vdb(query: str, top_k: int, working_dir: str = "./", only_context: bool = True) -> str:
+async def query_from_vdb(
+    query: str, top_k: int, working_dir: str = "./", only_context: bool = True
+) -> str:
     """Query the vector storage."""
     workspace = Workspace(working_dir)
     storage = VectorStorage(workspace)
@@ -180,7 +198,9 @@ async def query_from_vdb(query: str, top_k: int, working_dir: str = "./", only_c
         answer = ""
     else:
         llm = LLMService()
-        answer = await llm.ask_query(dump_to_reference_list([content for _, content in chunks]), query)
+        answer = await llm.ask_query(
+            dump_to_reference_list([content for _, content in chunks]), query
+        )
     context = "=====".join([title + ":=" + content for title, content in chunks])
 
     return answer + "`````" + context
@@ -247,11 +267,25 @@ if __name__ == "__main__":
     load_dotenv()
 
     parser = argparse.ArgumentParser(description="GraphRAG CLI")
-    parser.add_argument("-d", "--dataset", default="2wikimultihopqa", help="Dataset to use.")
+    parser.add_argument(
+        "-d", "--dataset", default="2wikimultihopqa", help="Dataset to use."
+    )
     parser.add_argument("-n", type=int, default=0, help="Subset of corpus to use.")
-    parser.add_argument("-c", "--create", action="store_true", help="Create the graph for the given dataset.")
-    parser.add_argument("-b", "--benchmark", action="store_true", help="Benchmark the graph for the given dataset.")
-    parser.add_argument("-s", "--score", action="store_true", help="Report scores after benchmarking.")
+    parser.add_argument(
+        "-c",
+        "--create",
+        action="store_true",
+        help="Create the graph for the given dataset.",
+    )
+    parser.add_argument(
+        "-b",
+        "--benchmark",
+        action="store_true",
+        help="Benchmark the graph for the given dataset.",
+    )
+    parser.add_argument(
+        "-s", "--score", action="store_true", help="Report scores after benchmarking."
+    )
     args = parser.parse_args()
 
     print("Loading dataset...")
@@ -314,7 +348,9 @@ if __name__ == "__main__":
             ground_truth = answer["ground_truth"]
             predicted_evidence = answer["evidence"]
 
-            p_retrieved: float = len(set(ground_truth).intersection(set(predicted_evidence))) / len(set(ground_truth))
+            p_retrieved: float = len(
+                set(ground_truth).intersection(set(predicted_evidence))
+            ) / len(set(ground_truth))
             retrieval_scores.append(p_retrieved)
 
             if answer["question"] in questions_multihop:

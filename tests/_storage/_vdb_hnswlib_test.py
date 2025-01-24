@@ -5,7 +5,11 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import numpy as np
 
-from fast_graphrag._storage._vdb_hnswlib import HNSWVectorStorage, HNSWVectorStorageConfig, InvalidStorageError
+from fast_graphrag._storage._vdb_hnswlib import (
+    HNSWVectorStorage,
+    HNSWVectorStorageConfig,
+    InvalidStorageError,
+)
 
 Vdb = {}
 Index = MagicMock()
@@ -17,7 +21,9 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         Index.get_current_count.side_effect = lambda: len(Vdb)
         Index.get_max_elements.side_effect = lambda: Index.max_size
         Index.resize_index.side_effect = lambda x: setattr(Index, "max_size", x)
-        Index.add_items.side_effect = lambda data, ids, num_threads: Vdb.update(dict(zip(ids, data)))
+        Index.add_items.side_effect = lambda data, ids, num_threads: Vdb.update(
+            dict(zip(ids, data))
+        )
         Vdb.clear()
 
         self.config = HNSWVectorStorageConfig()
@@ -61,13 +67,20 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         embeddings = np.random.rand(2, 128).astype(np.float32)
         Vdb.update({i: np.random.rand(128).astype(np.float32) for i in range(10)})
         self.storage._index.knn_query = MagicMock()
-        self.storage._index.knn_query.return_value = ([[1, 2, 3], [4, 5, 6]], [[0, 0.2, 0.4], [1.6, 1.8, 2.0]])
+        self.storage._index.knn_query.return_value = (
+            [[1, 2, 3], [4, 5, 6]],
+            [[0, 0.2, 0.4], [1.6, 1.8, 2.0]],
+        )
 
         ids, similarity = await self.storage.get_knn(embeddings, top_k=3)
 
-        self.storage._index.knn_query.assert_called_once_with(data=embeddings, k=3, num_threads=self.config.num_threads)
+        self.storage._index.knn_query.assert_called_once_with(
+            data=embeddings, k=3, num_threads=self.config.num_threads
+        )
         self.assertEqual(ids, [[1, 2, 3], [4, 5, 6]])
-        np.testing.assert_almost_equal(similarity, np.array([[1.0, 0.9, 0.8], [0.2, 0.1, 0.0]], dtype=np.float32))
+        np.testing.assert_almost_equal(
+            similarity, np.array([[1.0, 0.9, 0.8], [0.2, 0.1, 0.0]], dtype=np.float32)
+        )
 
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_score_all_empty_index(self, mock_logger):
@@ -77,7 +90,9 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         scores = await self.storage.score_all(embeddings, top_k=1)
 
         self.assertEqual(scores.shape, (0, 0))
-        mock_logger.warning.assert_called_with("No provided embeddings (128) or empty index (0).")
+        mock_logger.warning.assert_called_with(
+            "No provided embeddings (128) or empty index (0)."
+        )
 
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_score_all(self, mock_logger):
@@ -88,12 +103,23 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
 
         scores = await self.storage.score_all(embeddings, top_k=3)
 
-        self.storage._index.knn_query.assert_called_once_with(data=embeddings, k=3, num_threads=self.config.num_threads)
+        self.storage._index.knn_query.assert_called_once_with(
+            data=embeddings, k=3, num_threads=self.config.num_threads
+        )
         self.assertEqual(scores.shape, (1, 10))
-        np.testing.assert_almost_equal(scores.data, np.array([0.95, 0.9, 0.85], dtype=np.float32))
+        np.testing.assert_almost_equal(
+            scores.data, np.array([0.95, 0.9, 0.85], dtype=np.float32)
+        )
 
-    @patch("fast_graphrag._storage._vdb_hnswlib.hnswlib.Index", lambda *args, **kwargs: Index)
-    @patch("builtins.open", new_callable=mock_open, read_data=pickle.dumps({"key": "value"}))
+    @patch(
+        "fast_graphrag._storage._vdb_hnswlib.hnswlib.Index",
+        lambda *args, **kwargs: Index,
+    )
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data=pickle.dumps({"key": "value"}),
+    )
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_insert_start_with_existing_files(self, mock_logger, mock_open):
         self.storage.namespace = MagicMock()
@@ -102,12 +128,19 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         Vdb[1] = True
         await self.storage._insert_start()
 
-        self.storage._index.load_index.assert_called_with("dummy_path_hnsw_index_128.bin", allow_replace_deleted=True)
+        self.storage._index.load_index.assert_called_with(
+            "dummy_path_hnsw_index_128.bin", allow_replace_deleted=True
+        )
         self.assertEqual(self.storage._metadata, {"key": "value"})
         self.assertEqual(self.storage.size, 1)
-        mock_logger.debug.assert_called_with("Loaded 1 elements from vectordb storage 'dummy_path_hnsw_index_128.bin'.")
+        mock_logger.debug.assert_called_with(
+            "Loaded 1 elements from vectordb storage 'dummy_path_hnsw_index_128.bin'."
+        )
 
-    @patch("fast_graphrag._storage._vdb_hnswlib.hnswlib.Index", lambda *args, **kwargs: Index)
+    @patch(
+        "fast_graphrag._storage._vdb_hnswlib.hnswlib.Index",
+        lambda *args, **kwargs: Index,
+    )
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_insert_start_with_no_files(self, mock_logger):
         self.storage.namespace = MagicMock()
@@ -120,7 +153,10 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.storage._metadata, {})
         self.assertEqual(self.storage.size, 0)
 
-    @patch("fast_graphrag._storage._vdb_hnswlib.hnswlib.Index", lambda *args, **kwargs: Index)
+    @patch(
+        "fast_graphrag._storage._vdb_hnswlib.hnswlib.Index",
+        lambda *args, **kwargs: Index,
+    )
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_insert_start_with_no_namespace(self, mock_logger):
         self.storage.namespace = None
@@ -152,12 +188,23 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         await self.storage.upsert(ids, embeddings, metadata)
         await self.storage._insert_done()
 
-        self.storage._index.save_index.assert_called_with("dummy_path_hnsw_index_128.bin")
+        self.storage._index.save_index.assert_called_with(
+            "dummy_path_hnsw_index_128.bin"
+        )
         mock_open.assert_called_with("dummy_path_hnsw_metadata.pkl", "wb")
-        mock_logger.debug.assert_called_with("Saving 3 elements from vectordb storage 'dummy_path_hnsw_index_128.bin'.")
+        mock_logger.debug.assert_called_with(
+            "Saving 3 elements from vectordb storage 'dummy_path_hnsw_index_128.bin'."
+        )
 
-    @patch("fast_graphrag._storage._vdb_hnswlib.hnswlib.Index", lambda *args, **kwargs: Index)
-    @patch("builtins.open", new_callable=mock_open, read_data=pickle.dumps({"key": "value"}))
+    @patch(
+        "fast_graphrag._storage._vdb_hnswlib.hnswlib.Index",
+        lambda *args, **kwargs: Index,
+    )
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data=pickle.dumps({"key": "value"}),
+    )
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_query_start_with_existing_files(self, mock_logger, mock_open):
         self.storage.namespace = MagicMock()
@@ -168,11 +215,18 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
         Vdb[3] = True
         await self.storage._query_start()
 
-        self.storage._index.load_index.assert_called_with("dummy_path_hnsw_index_128.bin", allow_replace_deleted=True)
+        self.storage._index.load_index.assert_called_with(
+            "dummy_path_hnsw_index_128.bin", allow_replace_deleted=True
+        )
         self.assertEqual(self.storage._metadata, {"key": "value"})
-        mock_logger.debug.assert_called_with("Loaded 3 elements from vectordb storage 'dummy_path_hnsw_index_128.bin'.")
+        mock_logger.debug.assert_called_with(
+            "Loaded 3 elements from vectordb storage 'dummy_path_hnsw_index_128.bin'."
+        )
 
-    @patch("fast_graphrag._storage._vdb_hnswlib.hnswlib.Index", lambda *args, **kwargs: Index)
+    @patch(
+        "fast_graphrag._storage._vdb_hnswlib.hnswlib.Index",
+        lambda *args, **kwargs: Index,
+    )
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
     async def test_query_start_with_no_files(self, mock_logger):
         self.storage.namespace = MagicMock()
@@ -189,9 +243,13 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
     @patch("os.path.exists", return_value=True)
     @patch("builtins.open", new_callable=mock_open)
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
-    async def test_insert_start_with_invalid_file(self, mock_logger, mock_open, mock_exists):
+    async def test_insert_start_with_invalid_file(
+        self, mock_logger, mock_open, mock_exists
+    ):
         self.storage.namespace = MagicMock()
-        self.storage.namespace.get_resource_path.side_effect = lambda x: f"dummy_path_{x}"
+        self.storage.namespace.get_resource_path.side_effect = (
+            lambda x: f"dummy_path_{x}"
+        )
         with self.assertRaises(InvalidStorageError):
             await self.storage._insert_start()
         mock_logger.error.assert_called_once()
@@ -199,9 +257,13 @@ class TestHNSWVectorStorage(unittest.IsolatedAsyncioTestCase):
     @patch("os.path.exists", return_value=True)
     @patch("builtins.open", new_callable=mock_open)
     @patch("fast_graphrag._storage._vdb_hnswlib.logger")
-    async def test_query_start_with_invalid_file(self, mock_logger, mock_open, mock_exists):
+    async def test_query_start_with_invalid_file(
+        self, mock_logger, mock_open, mock_exists
+    ):
         self.storage.namespace = MagicMock()
-        self.storage.namespace.get_resource_path.side_effect = lambda x: f"dummy_path_{x}"
+        self.storage.namespace.get_resource_path.side_effect = (
+            lambda x: f"dummy_path_{x}"
+        )
         with self.assertRaises(InvalidStorageError):
             await self.storage._query_start()
         mock_logger.error.assert_called_once()

@@ -13,7 +13,9 @@ from fast_graphrag._llm._llm_openai import OpenAIEmbeddingService, OpenAILLMServ
 os.environ["OPENAI_API_KEY"] = ""
 
 
-RateLimitError429 = RateLimitError(message="Rate limit exceeded", response=MagicMock(), body=None)
+RateLimitError429 = RateLimitError(
+    message="Rate limit exceeded", response=MagicMock(), body=None
+)
 
 
 class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
@@ -21,9 +23,13 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service = OpenAILLMService(api_key="test")
         mock_response = str("Hi!")
         service.llm_async_client = AsyncMock()
-        service.llm_async_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        service.llm_async_client.chat.completions.create = AsyncMock(
+            return_value=mock_response
+        )
 
-        response, messages = await service.send_message(prompt="Hello", model="gpt-4o-mini")
+        response, messages = await service.send_message(
+            prompt="Hello", model="gpt-4o-mini"
+        )
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[-1]["role"], "assistant")
@@ -47,7 +53,9 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
             async_open_ai
         )
 
-        response, messages = await service.send_message(prompt="Hello", model="gpt-4o-mini", response_model=None)
+        response, messages = await service.send_message(
+            prompt="Hello", model="gpt-4o-mini", response_model=None
+        )
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[-1]["role"], "assistant")
@@ -63,7 +71,9 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
             async_open_ai
         )
 
-        response, messages = await service.send_message(prompt="Hello", model="gpt-4o-mini")
+        response, messages = await service.send_message(
+            prompt="Hello", model="gpt-4o-mini"
+        )
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[-1]["role"], "assistant")
@@ -72,7 +82,9 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service = OpenAILLMService(api_key="test")
         mock_response = str("Hi!")
         service.llm_async_client = AsyncMock()
-        service.llm_async_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        service.llm_async_client.chat.completions.create = AsyncMock(
+            return_value=mock_response
+        )
 
         response, messages = await service.send_message(
             prompt="Hello", system_prompt="System prompt", model="gpt-4o-mini"
@@ -86,10 +98,14 @@ class TestOpenAILLMService(unittest.IsolatedAsyncioTestCase):
         service = OpenAILLMService(api_key="test")
         mock_response = str("Hi!")
         service.llm_async_client = AsyncMock()
-        service.llm_async_client.chat.completions.create = AsyncMock(return_value=mock_response)
+        service.llm_async_client.chat.completions.create = AsyncMock(
+            return_value=mock_response
+        )
 
         history = [{"role": "user", "content": "Previous message"}]
-        response, messages = await service.send_message(prompt="Hello", history_messages=history, model="gpt-4o-mini")
+        response, messages = await service.send_message(
+            prompt="Hello", history_messages=history, model="gpt-4o-mini"
+        )
 
         self.assertEqual(response, mock_response)
         self.assertEqual(messages[0]["role"], "user")
@@ -101,9 +117,13 @@ class TestOpenAIEmbeddingService(unittest.IsolatedAsyncioTestCase):
         service = OpenAIEmbeddingService(api_key="test")
         mock_response = AsyncMock()
         mock_response.data = [AsyncMock(embedding=[0.1, 0.2, 0.3])]
-        service.embedding_async_client.embeddings.create = AsyncMock(return_value=mock_response)
+        service.embedding_async_client.embeddings.create = AsyncMock(
+            return_value=mock_response
+        )
 
-        embeddings = await service.encode(texts=["test"], model="text-embedding-3-small")
+        embeddings = await service.encode(
+            texts=["test"], model="text-embedding-3-small"
+        )
 
         self.assertEqual(embeddings.shape, (1, 3))
         self.assertEqual(embeddings[0][0], 0.1)
@@ -112,9 +132,13 @@ class TestOpenAIEmbeddingService(unittest.IsolatedAsyncioTestCase):
         service = OpenAIEmbeddingService(api_key="test")
         mock_response = AsyncMock()
         mock_response.data = [AsyncMock(embedding=[0.1, 0.2, 0.3])]
-        service.embedding_async_client.embeddings.create = AsyncMock(side_effect=(RateLimitError429, mock_response))
+        service.embedding_async_client.embeddings.create = AsyncMock(
+            side_effect=(RateLimitError429, mock_response)
+        )
 
-        embeddings = await service.encode(texts=["test"], model="text-embedding-3-small")
+        embeddings = await service.encode(
+            texts=["test"], model="text-embedding-3-small"
+        )
 
         self.assertEqual(embeddings.shape, (1, 3))
         self.assertEqual(embeddings[0][0], 0.1)
@@ -126,7 +150,9 @@ class TestOpenAIEmbeddingService(unittest.IsolatedAsyncioTestCase):
         service.embedding_async_client.embeddings.create = AsyncMock(
             side_effect=(APIConnectionError(request=MagicMock()), mock_response)
         )
-        embeddings = await service.encode(texts=["test"], model="text-embedding-3-small")
+        embeddings = await service.encode(
+            texts=["test"], model="text-embedding-3-small"
+        )
 
         self.assertEqual(embeddings.shape, (1, 3))
         self.assertEqual(embeddings[0][0], 0.1)
@@ -144,9 +170,13 @@ class TestOpenAIEmbeddingService(unittest.IsolatedAsyncioTestCase):
         service = OpenAIEmbeddingService(api_key="test")
         mock_response = AsyncMock()
         mock_response.data = [AsyncMock(embedding=[0.4, 0.5, 0.6])]
-        service.embedding_async_client.embeddings.create = AsyncMock(return_value=mock_response)
+        service.embedding_async_client.embeddings.create = AsyncMock(
+            return_value=mock_response
+        )
 
-        embeddings = await service.encode(texts=["test"], model="text-embedding-3-large")
+        embeddings = await service.encode(
+            texts=["test"], model="text-embedding-3-large"
+        )
 
         self.assertEqual(embeddings.shape, (1, 3))
         self.assertEqual(embeddings[0][0], 0.4)

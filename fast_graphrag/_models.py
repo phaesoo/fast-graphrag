@@ -17,12 +17,19 @@ def _json_schema_slim(schema: dict[str, Any]) -> None:
 
 class _BaseModelAliasMeta(_model_construction.ModelMetaclass):
     def __new__(
-        cls, name: str, bases: tuple[type[Any], ...], dct: Dict[str, Any], alias: Optional[str] = None, **kwargs: Any
+        cls,
+        name: str,
+        bases: tuple[type[Any], ...],
+        dct: Dict[str, Any],
+        alias: Optional[str] = None,
+        **kwargs: Any,
     ) -> type:
         if alias:
             dct["__qualname__"] = alias
             name = alias
-        return super().__new__(cls, name, bases, dct, json_schema_extra=_json_schema_slim, **kwargs)
+        return super().__new__(
+            cls, name, bases, dct, json_schema_extra=_json_schema_slim, **kwargs
+        )
 
 
 class BaseModelAlias:
@@ -53,7 +60,12 @@ def dump_to_csv(
             chain(
                 separator.join(
                     chain(
-                        (str(getattr(d, field)).replace("\n", "  ").replace("\t", " ") for field in fields),
+                        (
+                            str(getattr(d, field))
+                            .replace("\n", "  ")
+                            .replace("\t", " ")
+                            for field in fields
+                        ),
                         (str(v).replace("\n", "  ").replace("\t", " ") for v in vs),
                     )
                 )
@@ -78,9 +90,12 @@ class TAnswer(BaseModel):
 
 
 class TEditRelation(BaseModel):
-    ids: List[int] = Field(..., description="Ids of the facts that you are combining into one")
+    ids: List[int] = Field(
+        ..., description="Ids of the facts that you are combining into one"
+    )
     description: str = Field(
-        ..., description="Summarized description of the combined facts, in detail and comprehensive"
+        ...,
+        description="Summarized description of the combined facts, in detail and comprehensive",
     )
 
 

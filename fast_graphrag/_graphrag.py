@@ -6,13 +6,33 @@ from typing import Any, Dict, Generic, List, Optional, Tuple, Union
 from fast_graphrag._llm import BaseLLMService, format_and_send_prompt
 from fast_graphrag._llm._base import BaseEmbeddingService
 from fast_graphrag._models import TAnswer
-from fast_graphrag._policies._base import BaseEdgeUpsertPolicy, BaseGraphUpsertPolicy, BaseNodeUpsertPolicy
+from fast_graphrag._policies._base import (
+    BaseEdgeUpsertPolicy,
+    BaseGraphUpsertPolicy,
+    BaseNodeUpsertPolicy,
+)
 from fast_graphrag._prompt import PROMPTS
 from fast_graphrag._services._chunk_extraction import BaseChunkingService
-from fast_graphrag._services._information_extraction import BaseInformationExtractionService
+from fast_graphrag._services._information_extraction import (
+    BaseInformationExtractionService,
+)
 from fast_graphrag._services._state_manager import BaseStateManagerService
-from fast_graphrag._storage._base import BaseGraphStorage, BaseIndexedKeyValueStorage, BaseVectorStorage
-from fast_graphrag._types import GTChunk, GTEdge, GTEmbedding, GTHash, GTId, GTNode, TContext, TDocument, TQueryResponse
+from fast_graphrag._storage._base import (
+    BaseGraphStorage,
+    BaseIndexedKeyValueStorage,
+    BaseVectorStorage,
+)
+from fast_graphrag._types import (
+    GTChunk,
+    GTEdge,
+    GTEmbedding,
+    GTHash,
+    GTId,
+    GTNode,
+    TContext,
+    TDocument,
+    TQueryResponse,
+)
 from fast_graphrag._utils import TOKEN_TO_CHAR_RATIO, get_event_loop, logger
 
 
@@ -40,9 +60,15 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
     entity_types: List[str] = field()
     n_checkpoints: int = field(default=0)
 
-    llm_service: BaseLLMService = field(init=False, default_factory=lambda: BaseLLMService())
-    chunking_service: BaseChunkingService[GTChunk] = field(init=False, default_factory=lambda: BaseChunkingService())
-    information_extraction_service: BaseInformationExtractionService[GTChunk, GTNode, GTEdge, GTId] = field(
+    llm_service: BaseLLMService = field(
+        init=False, default_factory=lambda: BaseLLMService()
+    )
+    chunking_service: BaseChunkingService[GTChunk] = field(
+        init=False, default_factory=lambda: BaseChunkingService()
+    )
+    information_extraction_service: BaseInformationExtractionService[
+        GTChunk, GTNode, GTEdge, GTId
+    ] = field(
         init=False,
         default_factory=lambda: BaseInformationExtractionService(
             graph_upsert=BaseGraphUpsertPolicy(
@@ -52,7 +78,9 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
             )
         ),
     )
-    state_manager: BaseStateManagerService[GTNode, GTEdge, GTHash, GTChunk, GTId, GTEmbedding] = field(
+    state_manager: BaseStateManagerService[
+        GTNode, GTEdge, GTHash, GTChunk, GTId, GTEmbedding
+    ] = field(
         init=False,
         default_factory=lambda: BaseStateManagerService(
             workspace=None,
@@ -68,18 +96,24 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
     def insert(
         self,
         content: Union[str, List[str]],
-        metadata: Union[List[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]] = None,
+        metadata: Union[
+            List[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]
+        ] = None,
         params: Optional[InsertParam] = None,
-        show_progress: bool = True
+        show_progress: bool = True,
     ) -> Tuple[int, int, int]:
-        return get_event_loop().run_until_complete(self.async_insert(content, metadata, params, show_progress))
+        return get_event_loop().run_until_complete(
+            self.async_insert(content, metadata, params, show_progress)
+        )
 
     async def async_insert(
         self,
         content: Union[str, List[str]],
-        metadata: Union[List[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]] = None,
+        metadata: Union[
+            List[Optional[Dict[str, Any]]], Optional[Dict[str, Any]]
+        ] = None,
         params: Optional[InsertParam] = None,
-        show_progress: bool = True
+        show_progress: bool = True,
     ) -> Tuple[int, int, int]:
         """Insert a new memory or memories into the graph.
 
@@ -100,7 +134,9 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
         if metadata is None or isinstance(metadata, dict):
             data = (TDocument(data=c, metadata=metadata or {}) for c in content)
         else:
-            data = (TDocument(data=c, metadata=m or {}) for c, m in zip(content, metadata))
+            data = (
+                TDocument(data=c, metadata=m or {}) for c, m in zip(content, metadata)
+            )
 
         try:
             await self.state_manager.insert_start()
@@ -108,7 +144,9 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
             chunked_documents = await self.chunking_service.extract(data=data)
 
             # Filter the chunks checking for duplicates
-            new_chunks_per_data = await self.state_manager.filter_new_chunks(chunks_per_data=chunked_documents)
+            new_chunks_per_data = await self.state_manager.filter_new_chunks(
+                chunks_per_data=chunked_documents
+            )
 
             # Extract entities and relationships from the new chunks only
             subgraphs = self.information_extraction_service.extract(
@@ -126,7 +164,10 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
 
             # Update the graph with the new entities, relationships, and chunks
             await self.state_manager.upsert(
-                llm=self.llm_service, subgraphs=subgraphs, documents=new_chunks_per_data, show_progress=show_progress
+                llm=self.llm_service,
+                subgraphs=subgraphs,
+                documents=new_chunks_per_data,
+                show_progress=show_progress,
             )
 
             # Commit the changes if all is successful
@@ -142,7 +183,9 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
             logger.error(f"Error during insertion: {e}")
             raise e
 
-    def query(self, query: str, params: Optional[QueryParam] = None) -> TQueryResponse[GTNode, GTEdge, GTHash, GTChunk]:
+    def query(
+        self, query: str, params: Optional[QueryParam] = None
+    ) -> TQueryResponse[GTNode, GTEdge, GTHash, GTChunk]:
         async def _query() -> TQueryResponse[GTNode, GTEdge, GTHash, GTChunk]:
             await self.state_manager.query_start()
             try:
@@ -176,12 +219,16 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
             params = QueryParam()
 
         # Extract entities from query
-        extracted_entities = await self.information_extraction_service.extract_entities_from_query(
-            llm=self.llm_service, query=query, prompt_kwargs={}
+        extracted_entities = (
+            await self.information_extraction_service.extract_entities_from_query(
+                llm=self.llm_service, query=query, prompt_kwargs={}
+            )
         )
 
         # Retrieve relevant state
-        context = await self.state_manager.get_context(query=query, entities=extracted_entities)
+        context = await self.state_manager.get_context(
+            query=query, entities=extracted_entities
+        )
         if context is None:
             return TQueryResponse[GTNode, GTEdge, GTHash, GTChunk](
                 response=PROMPTS["fail_response"], context=TContext([], [], [])
@@ -194,32 +241,35 @@ class BaseGraphRAG(Generic[GTEmbedding, GTHash, GTChunk, GTNode, GTEdge, GTId]):
                 "relations": params.relations_max_tokens * TOKEN_TO_CHAR_RATIO,
                 "chunks": params.chunks_max_tokens * TOKEN_TO_CHAR_RATIO,
             },
-            output_context_str=not params.only_context
+            output_context_str=not params.only_context,
         )
         if params.only_context:
             answer = ""
         else:
             llm_response, _ = await format_and_send_prompt(
-                prompt_key="generate_response_query_with_references"
-                if params.with_references
-                else "generate_response_query_no_references",
+                prompt_key=(
+                    "generate_response_query_with_references"
+                    if params.with_references
+                    else "generate_response_query_no_references"
+                ),
                 llm=self.llm_service,
-                format_kwargs={
-                    "query": query,
-                    "context": context_str
-                },
+                format_kwargs={"query": query, "context": context_str},
                 response_model=TAnswer,
             )
             answer = llm_response.answer
 
-        return TQueryResponse[GTNode, GTEdge, GTHash, GTChunk](response=answer, context=context)
+        return TQueryResponse[GTNode, GTEdge, GTHash, GTChunk](
+            response=answer, context=context
+        )
 
     def save_graphml(self, output_path: str) -> None:
         """Save the graph in GraphML format."""
+
         async def _save_graphml() -> None:
             await self.state_manager.query_start()
             try:
                 await self.state_manager.save_graphml(output_path)
             finally:
                 await self.state_manager.query_done()
+
         get_event_loop().run_until_complete(_save_graphml())

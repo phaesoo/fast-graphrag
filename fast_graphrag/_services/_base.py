@@ -11,7 +11,12 @@ from fast_graphrag._policies._base import (
     BaseNodeUpsertPolicy,
     BaseRankingPolicy,
 )
-from fast_graphrag._storage import BaseBlobStorage, BaseGraphStorage, BaseIndexedKeyValueStorage, BaseVectorStorage
+from fast_graphrag._storage import (
+    BaseBlobStorage,
+    BaseGraphStorage,
+    BaseIndexedKeyValueStorage,
+    BaseVectorStorage,
+)
 from fast_graphrag._storage._namespace import Workspace
 from fast_graphrag._types import (
     GTChunk,
@@ -63,7 +68,9 @@ class BaseInformationExtractionService(Generic[GTChunk, GTNode, GTEdge, GTId]):
 
 
 @dataclass
-class BaseStateManagerService(Generic[GTNode, GTEdge, GTHash, GTChunk, GTId, GTEmbedding]):
+class BaseStateManagerService(
+    Generic[GTNode, GTEdge, GTHash, GTChunk, GTId, GTEmbedding]
+):
     """A class for managing state operations."""
 
     workspace: Optional[Workspace] = field()
@@ -77,9 +84,15 @@ class BaseStateManagerService(Generic[GTNode, GTEdge, GTHash, GTChunk, GTId, GTE
     node_upsert_policy: BaseNodeUpsertPolicy[GTNode, GTId] = field()
     edge_upsert_policy: BaseEdgeUpsertPolicy[GTEdge, GTId] = field()
 
-    entity_ranking_policy: BaseRankingPolicy = field(default_factory=lambda: BaseRankingPolicy(None))
-    relation_ranking_policy: BaseRankingPolicy = field(default_factory=lambda: BaseRankingPolicy(None))
-    chunk_ranking_policy: BaseRankingPolicy = field(default_factory=lambda: BaseRankingPolicy(None))
+    entity_ranking_policy: BaseRankingPolicy = field(
+        default_factory=lambda: BaseRankingPolicy(None)
+    )
+    relation_ranking_policy: BaseRankingPolicy = field(
+        default_factory=lambda: BaseRankingPolicy(None)
+    )
+    chunk_ranking_policy: BaseRankingPolicy = field(
+        default_factory=lambda: BaseRankingPolicy(None)
+    )
 
     node_specificity: bool = field(default=False)
 
@@ -101,7 +114,9 @@ class BaseStateManagerService(Generic[GTNode, GTEdge, GTHash, GTChunk, GTId, GTE
         """Commit the storage operations after indexing."""
         raise NotImplementedError
 
-    async def filter_new_chunks(self, chunks_per_data: Iterable[Iterable[GTChunk]]) -> List[List[GTChunk]]:
+    async def filter_new_chunks(
+        self, chunks_per_data: Iterable[Iterable[GTChunk]]
+    ) -> List[List[GTChunk]]:
         """Filter the chunks to check for duplicates.
 
         This method takes a sequence of chunks and returns a sequence of new chunks
@@ -119,9 +134,11 @@ class BaseStateManagerService(Generic[GTNode, GTEdge, GTHash, GTChunk, GTId, GTE
     async def upsert(
         self,
         llm: BaseLLMService,
-        subgraphs: List[asyncio.Future[Optional[BaseGraphStorage[GTNode, GTEdge, GTId]]]],
+        subgraphs: List[
+            asyncio.Future[Optional[BaseGraphStorage[GTNode, GTEdge, GTId]]]
+        ],
         documents: Iterable[Iterable[GTChunk]],
-        show_progress: bool = True
+        show_progress: bool = True,
     ) -> None:
         """Clean and upsert entities, relationships, and chunks into the storage."""
         raise NotImplementedError

@@ -24,23 +24,36 @@ class TestDefaultInformationExtractionService(unittest.IsolatedAsyncioTestCase):
         self.service = DefaultInformationExtractionService(graph_upsert=None)
         self.service.graph_upsert = AsyncMock(spec=BaseGraphUpsertPolicy)
 
-    @patch("fast_graphrag._services._information_extraction.format_and_send_prompt", new_callable=AsyncMock)
+    @patch(
+        "fast_graphrag._services._information_extraction.format_and_send_prompt",
+        new_callable=AsyncMock,
+    )
     async def test_extract_entities_from_query(self, mock_format_and_send_prompt):
         mock_format_and_send_prompt.return_value = (
             TQueryEntities(named=["entity1", "entity2"], generic=["generic1"]),
             None,
         )
-        r = await self.service.extract_entities_from_query(self.llm_service, "test query", self.prompt_kwargs)
+        r = await self.service.extract_entities_from_query(
+            self.llm_service, "test query", self.prompt_kwargs
+        )
         named, generic = r["named"], r["generic"]
         self.assertEqual(len(named), 2)
         self.assertEqual(named[0], "ENTITY1")
         self.assertEqual(named[1], "ENTITY2")
         self.assertEqual(len(generic), 1)
 
-    @patch("fast_graphrag._services._information_extraction.format_and_send_prompt", new_callable=AsyncMock)
+    @patch(
+        "fast_graphrag._services._information_extraction.format_and_send_prompt",
+        new_callable=AsyncMock,
+    )
     async def test_extract(self, mock_format_and_send_prompt):
-        mock_format_and_send_prompt.return_value = (TGraph(entities=[], relationships=[]), [])
-        tasks = self.service.extract(self.llm_service, [self.document], self.prompt_kwargs, self.entity_types)
+        mock_format_and_send_prompt.return_value = (
+            TGraph(entities=[], relationships=[]),
+            [],
+        )
+        tasks = self.service.extract(
+            self.llm_service, [self.document], self.prompt_kwargs, self.entity_types
+        )
         results = await asyncio.gather(*tasks)
         self.assertEqual(len(results), 1)
         self.assertIsInstance(results[0], BaseGraphStorage)

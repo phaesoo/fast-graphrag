@@ -32,7 +32,9 @@ class PickleBlobStorage(BaseBlobStorage[GTBlob]):
                     logger.error(t)
                     raise InvalidStorageError(t) from e
             else:
-                logger.info(f"No data file found for blob storage {data_file_name}. Loading empty storage.")
+                logger.info(
+                    f"No data file found for blob storage {data_file_name}. Loading empty storage."
+                )
                 self._data = None
         else:
             self._data = None
@@ -44,11 +46,11 @@ class PickleBlobStorage(BaseBlobStorage[GTBlob]):
             try:
                 with open(data_file_name, "wb") as f:
                     pickle.dump(self._data, f)
-                logger.debug(
-                    f"Saving blob storage '{data_file_name}'."
-                )
+                logger.debug(f"Saving blob storage '{data_file_name}'.")
             except Exception as e:
-                logger.error(f"Error saving data file for blob storage {data_file_name}: {e}")
+                logger.error(
+                    f"Error saving data file for blob storage {data_file_name}: {e}"
+                )
 
     async def _query_start(self):
         assert self.namespace, "Loading a blob storage requires a namespace."
@@ -63,7 +65,9 @@ class PickleBlobStorage(BaseBlobStorage[GTBlob]):
                 logger.error(t)
                 raise InvalidStorageError(t) from e
         else:
-            logger.warning(f"No data file found for blob storage {data_file_name}. Loading empty blob.")
+            logger.warning(
+                f"No data file found for blob storage {data_file_name}. Loading empty blob."
+            )
             self._data = None
 
     async def _query_done(self):

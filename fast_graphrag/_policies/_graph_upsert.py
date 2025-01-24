@@ -9,7 +9,16 @@ from fast_graphrag._llm._llm_openai import BaseLLMService
 from fast_graphrag._models import TEditRelationList, TEntityDescription
 from fast_graphrag._prompt import PROMPTS
 from fast_graphrag._storage._base import BaseGraphStorage
-from fast_graphrag._types import GTEdge, GTId, GTNode, TEntity, THash, TId, TIndex, TRelation
+from fast_graphrag._types import (
+    GTEdge,
+    GTId,
+    GTNode,
+    TEntity,
+    THash,
+    TId,
+    TIndex,
+    TRelation,
+)
 from fast_graphrag._utils import logger
 
 from ._base import BaseEdgeUpsertPolicy, BaseGraphUpsertPolicy, BaseNodeUpsertPolicy
@@ -25,8 +34,8 @@ async def summarize_entity_description(
     entity_description_summarization_prompt = prompt
 
     # Extract entities and relationships
-    formatted_entity_description_summarization_prompt = entity_description_summarization_prompt.format(
-        description=description
+    formatted_entity_description_summarization_prompt = (
+        entity_description_summarization_prompt.format(description=description)
     )
     new_description, _ = await llm.send_message(
         prompt=formatted_entity_description_summarization_prompt,
@@ -45,7 +54,10 @@ async def summarize_entity_description(
 @dataclass
 class DefaultNodeUpsertPolicy(BaseNodeUpsertPolicy[GTNode, GTId]):
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, GTEdge, GTId], source_nodes: Iterable[GTNode]
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[GTNode, GTEdge, GTId],
+        source_nodes: Iterable[GTNode],
     ) -> Tuple[BaseGraphStorage[GTNode, GTEdge, GTId], Iterable[Tuple[TIndex, GTNode]]]:
         upserted: Dict[TIndex, GTNode] = {}
         for node in source_nodes:
@@ -62,7 +74,10 @@ class DefaultNodeUpsertPolicy(BaseNodeUpsertPolicy[GTNode, GTId]):
 @dataclass
 class DefaultEdgeUpsertPolicy(BaseEdgeUpsertPolicy[GTEdge, GTId]):
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, GTEdge, GTId], source_edges: Iterable[GTEdge]
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[GTNode, GTEdge, GTId],
+        source_edges: Iterable[GTEdge],
     ) -> Tuple[BaseGraphStorage[GTNode, GTEdge, GTId], Iterable[Tuple[TIndex, GTEdge]]]:
         indices = await target.insert_edges(source_edges)
 
@@ -75,7 +90,9 @@ class DefaultEdgeUpsertPolicy(BaseEdgeUpsertPolicy[GTEdge, GTId]):
 
 
 @dataclass
-class DefaultGraphUpsertPolicy(BaseGraphUpsertPolicy[GTNode, GTEdge, GTId]):  # noqa: N801
+class DefaultGraphUpsertPolicy(
+    BaseGraphUpsertPolicy[GTNode, GTEdge, GTId]
+):  # noqa: N801
     async def __call__(
         self,
         llm: BaseLLMService,
@@ -99,22 +116,33 @@ class DefaultGraphUpsertPolicy(BaseGraphUpsertPolicy[GTNode, GTEdge, GTId]):  # 
 
 
 @dataclass
-class NodeUpsertPolicy_SummarizeDescription(BaseNodeUpsertPolicy[TEntity, TId]):  # noqa: N801
+class NodeUpsertPolicy_SummarizeDescription(
+    BaseNodeUpsertPolicy[TEntity, TId]
+):  # noqa: N801
     @dataclass
     class Config:
         max_node_description_size: int = field(default=512)
         node_summarization_ratio: float = field(default=0.5)
-        node_summarization_prompt: str = field(default=PROMPTS["summarize_entity_descriptions"])
+        node_summarization_prompt: str = field(
+            default=PROMPTS["summarize_entity_descriptions"]
+        )
         is_async: bool = field(default=True)
 
     config: Config = field(default_factory=Config)
 
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[TEntity, GTEdge, TId], source_nodes: Iterable[TEntity]
-    ) -> Tuple[BaseGraphStorage[TEntity, GTEdge, TId], Iterable[Tuple[TIndex, TEntity]]]:
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[TEntity, GTEdge, TId],
+        source_nodes: Iterable[TEntity],
+    ) -> Tuple[
+        BaseGraphStorage[TEntity, GTEdge, TId], Iterable[Tuple[TIndex, TEntity]]
+    ]:
         upserted: List[Tuple[TIndex, TEntity]] = []
 
-        async def _upsert_node(node_id: TId, nodes: List[TEntity]) -> Optional[Tuple[TIndex, TEntity]]:
+        async def _upsert_node(
+            node_id: TId, nodes: List[TEntity]
+        ) -> Optional[Tuple[TIndex, TEntity]]:
             existing_node, index = await target.get_node(node_id)
             if existing_node:
                 nodes.append(existing_node)
@@ -148,7 +176,9 @@ class NodeUpsertPolicy_SummarizeDescription(BaseNodeUpsertPolicy[TEntity, TId]):
             grouped_nodes[node.name].append(node)
 
         if self.config.is_async:
-            node_upsert_tasks = (_upsert_node(node_id, nodes) for node_id, nodes in grouped_nodes.items())
+            node_upsert_tasks = (
+                _upsert_node(node_id, nodes) for node_id, nodes in grouped_nodes.items()
+            )
             await asyncio.gather(*node_upsert_tasks)
         else:
             for node_id, nodes in grouped_nodes.items():
@@ -163,7 +193,9 @@ class NodeUpsertPolicy_SummarizeDescription(BaseNodeUpsertPolicy[TEntity, TId]):
 
 
 @dataclass
-class EdgeUpsertPolicy_UpsertIfValidNodes(BaseEdgeUpsertPolicy[TRelation, TId]):  # noqa: N801
+class EdgeUpsertPolicy_UpsertIfValidNodes(
+    BaseEdgeUpsertPolicy[TRelation, TId]
+):  # noqa: N801
     @dataclass
     class Config:
         is_async: bool = field(default=True)
@@ -171,8 +203,13 @@ class EdgeUpsertPolicy_UpsertIfValidNodes(BaseEdgeUpsertPolicy[TRelation, TId]):
     config: Config = field(default_factory=Config)
 
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, TRelation, TId], source_edges: Iterable[TRelation]
-    ) -> Tuple[BaseGraphStorage[GTNode, TRelation, TId], Iterable[Tuple[TIndex, TRelation]]]:
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[GTNode, TRelation, TId],
+        source_edges: Iterable[TRelation],
+    ) -> Tuple[
+        BaseGraphStorage[GTNode, TRelation, TId], Iterable[Tuple[TIndex, TRelation]]
+    ]:
         new_edges: List[TRelation] = []
 
         async def _upsert_edge(edge: TRelation) -> Optional[Tuple[TIndex, TRelation]]:
@@ -200,7 +237,9 @@ class EdgeUpsertPolicy_UpsertIfValidNodes(BaseEdgeUpsertPolicy[TRelation, TId]):
 
 
 @dataclass
-class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRelation, TId]):  # noqa: N801
+class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(
+    BaseEdgeUpsertPolicy[TRelation, TId]
+):  # noqa: N801
     @dataclass
     class Config:
         edge_merge_threshold: int = field(default=5)
@@ -253,7 +292,10 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
         new_edges: List[TRelation] = []
         map_incremental_to_edge: Dict[int, Tuple[TRelation, Union[TIndex, None]]] = {
             **dict(enumerate(existing_edges)),
-            **{idx + len(existing_edges): (edge, None) for idx, edge in enumerate(edges)},
+            **{
+                idx + len(existing_edges): (edge, None)
+                for idx, edge in enumerate(edges)
+            },
         }
 
         # Extract entities and relationships
@@ -262,7 +304,10 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
             llm=llm,
             format_kwargs={
                 "edge_list": "\n".join(
-                    (f"{idx}, {edge.description}" for idx, (edge, _) in map_incremental_to_edge.items())
+                    (
+                        f"{idx}, {edge.description}"
+                        for idx, (edge, _) in map_incremental_to_edge.items()
+                    )
                 )
             },
             response_model=TEditRelationList,
@@ -273,10 +318,13 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
             relation_indices = [
                 index
                 for index in edges_group.ids
-                if index < len(existing_edges) + len(edges)  # Only consider valid indices
+                if index
+                < len(existing_edges) + len(edges)  # Only consider valid indices
             ]
             if len(relation_indices) < 2:
-                logger.info("LLM returned invalid index for edge maintenance, ignoring.")
+                logger.info(
+                    "LLM returned invalid index for edge maintenance, ignoring."
+                )
                 continue
 
             chunks: Set[THash] = set()
@@ -294,7 +342,9 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
             first_index = relation_indices[0]
             edge, index = map_incremental_to_edge[first_index]
             edge.description = edges_group.description
-            visited_edges[first_index] = None  # None means it was visited but not marked for deletion.
+            visited_edges[first_index] = (
+                None  # None means it was visited but not marked for deletion.
+            )
             if edge.chunks:
                 chunks.update(edge.chunks)
             edge.chunks = list(chunks)
@@ -310,11 +360,20 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
                 # upserted_eges.append((await target.upsert_edge(edge, None), edge))
 
         # Only existing edges that were marked for deletion have non-None value which corresponds to their real index.
-        return updated_edges, new_edges, [v for v in visited_edges.values() if v is not None]
+        return (
+            updated_edges,
+            new_edges,
+            [v for v in visited_edges.values() if v is not None],
+        )
 
     async def __call__(
-        self, llm: BaseLLMService, target: BaseGraphStorage[GTNode, TRelation, TId], source_edges: Iterable[TRelation]
-    ) -> Tuple[BaseGraphStorage[GTNode, TRelation, TId], Iterable[Tuple[TIndex, TRelation]]]:
+        self,
+        llm: BaseLLMService,
+        target: BaseGraphStorage[GTNode, TRelation, TId],
+        source_edges: Iterable[TRelation],
+    ) -> Tuple[
+        BaseGraphStorage[GTNode, TRelation, TId], Iterable[Tuple[TIndex, TRelation]]
+    ]:
         grouped_edges: Dict[Tuple[TId, TId], List[TRelation]] = defaultdict(lambda: [])
         upserted_edges: List[List[Tuple[TIndex, TRelation]]] = []
         new_edges: List[List[TRelation]] = []
@@ -332,7 +391,9 @@ class EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM(BaseEdgeUpsertPolicy[TRel
                 upserted_edges, new_edges, to_delete_edges = zip(*tasks)
         else:
             tasks = [
-                await self._upsert_edge(llm, target, edges, source_entity, target_entity)
+                await self._upsert_edge(
+                    llm, target, edges, source_entity, target_entity
+                )
                 for (source_entity, target_entity), edges in grouped_edges.items()
             ]
             if len(tasks):

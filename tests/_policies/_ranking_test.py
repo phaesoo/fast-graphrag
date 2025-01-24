@@ -98,6 +98,7 @@ class TestRankingPolicyElbow(unittest.TestCase):
         expected = csr_matrix([0, 0.05, 0.05, 0.05, 0.05])
         np.testing.assert_array_equal(result.toarray(), expected.toarray())
 
+
 # class TestRankingPolicyWithConfidence(unittest.TestCase):
 #     def test_not_implemented(self):
 #         policy = RankingPolicy_WithConfidence()
@@ -105,5 +106,5 @@ class TestRankingPolicyElbow(unittest.TestCase):
 #         with self.assertRaises(NotImplementedError):
 #             policy(scores)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

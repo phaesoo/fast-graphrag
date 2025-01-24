@@ -15,7 +15,10 @@ from fast_graphrag._policies._graph_upsert import (
     EdgeUpsertPolicy_UpsertValidAndMergeSimilarByLLM,
     NodeUpsertPolicy_SummarizeDescription,
 )
-from fast_graphrag._policies._ranking import RankingPolicy_TopK, RankingPolicy_WithThreshold
+from fast_graphrag._policies._ranking import (
+    RankingPolicy_TopK,
+    RankingPolicy_WithThreshold,
+)
 from fast_graphrag._services import (
     BaseChunkingService,
     BaseInformationExtractionService,
@@ -32,7 +35,15 @@ from fast_graphrag._storage import (
     DefaultVectorStorageConfig,
 )
 from fast_graphrag._storage._namespace import Workspace
-from fast_graphrag._types import TChunk, TEmbedding, TEntity, THash, TId, TIndex, TRelation
+from fast_graphrag._types import (
+    TChunk,
+    TEmbedding,
+    TEntity,
+    THash,
+    TId,
+    TIndex,
+    TRelation,
+)
 
 from ._graphrag import BaseGraphRAG, QueryParam
 
@@ -45,44 +56,56 @@ class GraphRAG(BaseGraphRAG[TEmbedding, THash, TChunk, TEntity, TRelation, TId])
     class Config:
         """Configuration for the GraphRAG class."""
 
-        chunking_service_cls: Type[BaseChunkingService[TChunk]] = field(default=DefaultChunkingService)
-        information_extraction_service_cls: Type[BaseInformationExtractionService[TChunk, TEntity, TRelation, TId]] = (
-            field(default=DefaultInformationExtractionService)
+        chunking_service_cls: Type[BaseChunkingService[TChunk]] = field(
+            default=DefaultChunkingService
         )
-        information_extraction_upsert_policy: BaseGraphUpsertPolicy[TEntity, TRelation, TId] = field(
+        information_extraction_service_cls: Type[
+            BaseInformationExtractionService[TChunk, TEntity, TRelation, TId]
+        ] = field(default=DefaultInformationExtractionService)
+        information_extraction_upsert_policy: BaseGraphUpsertPolicy[
+            TEntity, TRelation, TId
+        ] = field(
             default_factory=lambda: DefaultGraphUpsertPolicy(
                 config=NodeUpsertPolicy_SummarizeDescription.Config(),
                 nodes_upsert_cls=NodeUpsertPolicy_SummarizeDescription,
                 edges_upsert_cls=EdgeUpsertPolicy_UpsertIfValidNodes,
             )
         )
-        state_manager_cls: Type[BaseStateManagerService[TEntity, TRelation, THash, TChunk, TId, TEmbedding]] = field(
-            default=DefaultStateManagerService
-        )
+        state_manager_cls: Type[
+            BaseStateManagerService[TEntity, TRelation, THash, TChunk, TId, TEmbedding]
+        ] = field(default=DefaultStateManagerService)
 
         llm_service: BaseLLMService = field(default_factory=lambda: DefaultLLMService())
-        embedding_service: BaseEmbeddingService = field(default_factory=lambda: DefaultEmbeddingService())
+        embedding_service: BaseEmbeddingService = field(
+            default_factory=lambda: DefaultEmbeddingService()
+        )
 
         graph_storage: DefaultGraphStorage[TEntity, TRelation, TId] = field(
-            default_factory=lambda: DefaultGraphStorage(DefaultGraphStorageConfig(node_cls=TEntity, edge_cls=TRelation))
+            default_factory=lambda: DefaultGraphStorage(
+                DefaultGraphStorageConfig(node_cls=TEntity, edge_cls=TRelation)
+            )
         )
         entity_storage: DefaultVectorStorage[TIndex, TEmbedding] = field(
-            default_factory=lambda: DefaultVectorStorage(
-                DefaultVectorStorageConfig()
-            )
+            default_factory=lambda: DefaultVectorStorage(DefaultVectorStorageConfig())
         )
         chunk_storage: DefaultIndexedKeyValueStorage[THash, TChunk] = field(
             default_factory=lambda: DefaultIndexedKeyValueStorage(None)
         )
 
         entity_ranking_policy: RankingPolicy_WithThreshold = field(
-            default_factory=lambda: RankingPolicy_WithThreshold(RankingPolicy_WithThreshold.Config(threshold=0.005))
+            default_factory=lambda: RankingPolicy_WithThreshold(
+                RankingPolicy_WithThreshold.Config(threshold=0.005)
+            )
         )
         relation_ranking_policy: RankingPolicy_TopK = field(
-            default_factory=lambda: RankingPolicy_TopK(RankingPolicy_TopK.Config(top_k=64))
+            default_factory=lambda: RankingPolicy_TopK(
+                RankingPolicy_TopK.Config(top_k=64)
+            )
         )
         chunk_ranking_policy: RankingPolicy_TopK = field(
-            default_factory=lambda: RankingPolicy_TopK(RankingPolicy_TopK.Config(top_k=8))
+            default_factory=lambda: RankingPolicy_TopK(
+                RankingPolicy_TopK.Config(top_k=8)
+            )
         )
         node_upsert_policy: NodeUpsertPolicy_SummarizeDescription = field(
             default_factory=lambda: NodeUpsertPolicy_SummarizeDescription()
@@ -102,8 +125,10 @@ class GraphRAG(BaseGraphRAG[TEmbedding, THash, TChunk, TEntity, TRelation, TId])
         self.llm_service = self.config.llm_service
         self.embedding_service = self.config.embedding_service
         self.chunking_service = self.config.chunking_service_cls()
-        self.information_extraction_service = self.config.information_extraction_service_cls(
-            graph_upsert=self.config.information_extraction_upsert_policy
+        self.information_extraction_service = (
+            self.config.information_extraction_service_cls(
+                graph_upsert=self.config.information_extraction_upsert_policy
+            )
         )
         self.state_manager = self.config.state_manager_cls(
             workspace=Workspace.new(self.working_dir, keep_n=self.n_checkpoints),

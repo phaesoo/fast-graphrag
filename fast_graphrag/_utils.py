@@ -28,7 +28,9 @@ def timeit(func: Callable[..., Any]):
 
 
 def throttle_async_func_call(
-    max_concurrent: int = 2048, stagger_time: Optional[float] = None, waiting_time: float = 0.001
+    max_concurrent: int = 2048,
+    stagger_time: Optional[float] = None,
+    waiting_time: float = 0.001,
 ):
     _wrappedFn = TypeVar("_wrappedFn", bound=Callable[..., Any])
 
@@ -66,7 +68,9 @@ def get_event_loop() -> asyncio.AbstractEventLoop:
     return loop
 
 
-def extract_sorted_scores(row_vector: csr_matrix) -> Tuple[npt.NDArray[np.int64], npt.NDArray[np.float32]]:
+def extract_sorted_scores(
+    row_vector: csr_matrix,
+) -> Tuple[npt.NDArray[np.int64], npt.NDArray[np.float32]]:
     """Take a sparse row vector and return a list of non-zero (index, score) pairs sorted by score."""
     assert row_vector.shape[0] <= 1, "The input matrix must be a row vector."
     if row_vector.shape[0] == 0:
@@ -92,7 +96,9 @@ def extract_sorted_scores(row_vector: csr_matrix) -> Tuple[npt.NDArray[np.int64]
     return sorted_indices_array, sorted_probabilities_array
 
 
-def csr_from_indices_list(data: List[List[Union[int, TIndex]]], shape: Tuple[int, int]) -> csr_matrix:
+def csr_from_indices_list(
+    data: List[List[Union[int, TIndex]]], shape: Tuple[int, int]
+) -> csr_matrix:
     """Create a CSR matrix from a list of lists."""
     num_rows = len(data)
 

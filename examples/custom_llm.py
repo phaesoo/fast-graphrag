@@ -27,7 +27,7 @@ grag = GraphRAG(
             api_key="your-api-key",
             mode=instructor.Mode.JSON,
             api_version="your-llm-api_version",
-            client="openai or azure"
+            client="openai or azure",
         ),
         embedding_service=OpenAIEmbeddingService(
             model="your-embedding-model",
@@ -35,7 +35,7 @@ grag = GraphRAG(
             api_key="your-api-key",
             embedding_dim=512,  # the output embedding dim of the chosen model
             api_version="your-llm-api_version",
-            client="openai or azure"
+            client="openai or azure",
         ),
     ),
 )

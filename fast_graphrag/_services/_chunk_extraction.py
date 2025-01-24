@@ -37,10 +37,14 @@ class DefaultChunkingServiceConfig:
 class DefaultChunkingService(BaseChunkingService[TChunk]):
     """Default class for chunk extractor."""
 
-    config: DefaultChunkingServiceConfig = field(default_factory=DefaultChunkingServiceConfig)
+    config: DefaultChunkingServiceConfig = field(
+        default_factory=DefaultChunkingServiceConfig
+    )
 
     def __post_init__(self):
-        self._split_re = re.compile(f"({'|'.join(re.escape(s) for s in self.config.separators or [])})")
+        self._split_re = re.compile(
+            f"({'|'.join(re.escape(s) for s in self.config.separators or [])})"
+        )
         self._chunk_size = self.config.chunk_token_size * TOKEN_TO_CHAR_RATIO
         self._chunk_overlap = self.config.chunk_token_overlap * TOKEN_TO_CHAR_RATIO
 
@@ -100,7 +104,8 @@ class DefaultChunkingService(BaseChunkingService[TChunk]):
             split_length: int = len(split)
             # Ignore splitting if it's a separator
             if (i % 2 == 1) or (
-                current_chunk_length + split_length <= self._chunk_size - (self._chunk_overlap if i > 0 else 0)
+                current_chunk_length + split_length
+                <= self._chunk_size - (self._chunk_overlap if i > 0 else 0)
             ):
                 current_chunk.append((split, split_length))
                 current_chunk_length += split_length

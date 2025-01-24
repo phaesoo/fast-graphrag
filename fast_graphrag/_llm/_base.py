@@ -40,7 +40,9 @@ async def format_and_send_prompt(
     formatted_prompt = prompt.format(**format_kwargs)
 
     # Send the formatted prompt to the LLM
-    return await llm.send_message(prompt=formatted_prompt, response_model=response_model, **args)
+    return await llm.send_message(
+        prompt=formatted_prompt, response_model=response_model, **args
+    )
 
 
 @dataclass

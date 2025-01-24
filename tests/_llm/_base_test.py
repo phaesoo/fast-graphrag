@@ -7,12 +7,12 @@ from pydantic import BaseModel
 from fast_graphrag._llm._base import BaseLLMService, format_and_send_prompt
 
 # Assuming these are defined somewhere in your codebase
-PROMPTS = {
-    "example_prompt": "Hello, {name}!"
-}
+PROMPTS = {"example_prompt": "Hello, {name}!"}
+
 
 class TestModel(BaseModel):
     answer: str
+
 
 class TestFormatAndSendPrompt(unittest.IsolatedAsyncioTestCase):
 
@@ -27,12 +27,11 @@ class TestFormatAndSendPrompt(unittest.IsolatedAsyncioTestCase):
             prompt_key="example_prompt",
             llm=mock_llm,
             format_kwargs={"name": "World"},
-            response_model=TestModel
+            response_model=TestModel,
         )
 
         mock_llm.send_message.assert_called_once_with(
-            prompt="Hello, World!",
-            response_model=TestModel
+            prompt="Hello, World!", response_model=TestModel
         )
         self.assertEqual(result, mock_response)
 
@@ -49,16 +48,17 @@ class TestFormatAndSendPrompt(unittest.IsolatedAsyncioTestCase):
             format_kwargs={"name": "World"},
             response_model=TestModel,
             model="test_model",
-            max_tokens=100
+            max_tokens=100,
         )
 
         mock_llm.send_message.assert_called_once_with(
             prompt="Hello, World!",
             response_model=TestModel,
             model="test_model",
-            max_tokens=100
+            max_tokens=100,
         )
         self.assertEqual(result, mock_response)
+
 
 if __name__ == "__main__":
     unittest.main()

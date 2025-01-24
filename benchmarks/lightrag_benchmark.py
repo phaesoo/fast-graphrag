@@ -20,6 +20,7 @@ from tqdm import tqdm
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("nano-vectordb").setLevel(logging.WARNING)
 
+
 @dataclass
 class Query:
     """Dataclass for a query."""
@@ -81,11 +82,25 @@ if __name__ == "__main__":
     load_dotenv()
 
     parser = argparse.ArgumentParser(description="LightRAG CLI")
-    parser.add_argument("-d", "--dataset", default="2wikimultihopqa", help="Dataset to use.")
+    parser.add_argument(
+        "-d", "--dataset", default="2wikimultihopqa", help="Dataset to use."
+    )
     parser.add_argument("-n", type=int, default=0, help="Subset of corpus to use.")
-    parser.add_argument("-c", "--create", action="store_true", help="Create the graph for the given dataset.")
-    parser.add_argument("-b", "--benchmark", action="store_true", help="Benchmark the graph for the given dataset.")
-    parser.add_argument("-s", "--score", action="store_true", help="Report scores after benchmarking.")
+    parser.add_argument(
+        "-c",
+        "--create",
+        action="store_true",
+        help="Create the graph for the given dataset.",
+    )
+    parser.add_argument(
+        "-b",
+        "--benchmark",
+        action="store_true",
+        help="Benchmark the graph for the given dataset.",
+    )
+    parser.add_argument(
+        "-s", "--score", action="store_true", help="Report scores after benchmarking."
+    )
     parser.add_argument("--mode", default="local", help="LightRAG query mode.")
     args = parser.parse_args()
 
@@ -101,27 +116,32 @@ if __name__ == "__main__":
         grag = LightRAG(
             working_dir=working_dir,
             llm_model_func=gpt_4o_mini_complete,
-            log_level=logging.WARNING
+            log_level=logging.WARNING,
         )
-        grag.insert([f"{title}: {corpus}" for _, (title, corpus) in tuple(corpus.items())])
+        grag.insert(
+            [f"{title}: {corpus}" for _, (title, corpus) in tuple(corpus.items())]
+        )
     if args.benchmark:
         queries = get_queries(dataset)
         print("Dataset loaded. Queries:", len(queries))
         grag = LightRAG(
             working_dir=working_dir,
             llm_model_func=gpt_4o_mini_complete,
-            log_level=logging.WARNING
+            log_level=logging.WARNING,
         )
 
         async def _query_task(query: Query, mode: str) -> Dict[str, Any]:
             answer = await grag.aquery(
-                query.question, QueryParam(mode=mode, only_need_context=True, max_token_for_text_unit=9000)
+                query.question,
+                QueryParam(
+                    mode=mode, only_need_context=True, max_token_for_text_unit=9000
+                ),
             )
             chunks = [
                 c.split(",")[1].split(":")[0].lstrip('"')
-                for c in re.findall(r"\n-----Sources-----\n```csv\n(.*?)\n```", answer, re.DOTALL)[0].split("\r\n")[
-                    1:-1
-                ]
+                for c in re.findall(
+                    r"\n-----Sources-----\n```csv\n(.*?)\n```", answer, re.DOTALL
+                )[0].split("\r\n")[1:-1]
             ]
             return {
                 "question": query.question,
@@ -134,18 +154,25 @@ if __name__ == "__main__":
             answers = [
                 await a
                 for a in tqdm(
-                    asyncio.as_completed([_query_task(query, mode=mode) for query in queries]), total=len(queries)
+                    asyncio.as_completed(
+                        [_query_task(query, mode=mode) for query in queries]
+                    ),
+                    total=len(queries),
                 )
             ]
             return answers
 
         answers = always_get_an_event_loop().run_until_complete(_run(mode=args.mode))
 
-        with open(f"./results/lightrag/{args.dataset}_{args.n}_{args.mode}.json", "w") as f:
+        with open(
+            f"./results/lightrag/{args.dataset}_{args.n}_{args.mode}.json", "w"
+        ) as f:
             json.dump(answers, f, indent=4)
 
     if args.benchmark or args.score:
-        with open(f"./results/lightrag/{args.dataset}_{args.n}_{args.mode}.json", "r") as f:
+        with open(
+            f"./results/lightrag/{args.dataset}_{args.n}_{args.mode}.json", "r"
+        ) as f:
             answers = json.load(f)
 
         try:
@@ -162,7 +189,9 @@ if __name__ == "__main__":
             ground_truth = answer["ground_truth"]
             predicted_evidence = answer["evidence"]
 
-            p_retrieved: float = len(set(ground_truth).intersection(set(predicted_evidence))) / len(set(ground_truth))
+            p_retrieved: float = len(
+                set(ground_truth).intersection(set(predicted_evidence))
+            ) / len(set(ground_truth))
             retrieval_scores.append(p_retrieved)
 
             if answer["question"] in questions_multihop:

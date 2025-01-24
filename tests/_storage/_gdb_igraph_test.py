@@ -28,7 +28,11 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
     async def test_get_node(self):
         node = MagicMock()
         node.name = "node1"
-        node.attributes.return_value = {"name": "foo", "description": "value", "type": ""}
+        node.attributes.return_value = {
+            "name": "foo",
+            "description": "value",
+            "type": "",
+        }
         self.storage._graph.vs.find.return_value = node
 
         result = await self.storage.get_node("node1")
@@ -42,22 +46,34 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
     async def test_get_edges(self):
         self.storage.get_edge_indices = AsyncMock(return_value=[0, 1])
         self.storage.get_edge_by_index = AsyncMock(
-            side_effect=[TRelation(source="node1", target="node2", description="txt"), None]
+            side_effect=[
+                TRelation(source="node1", target="node2", description="txt"),
+                None,
+            ]
         )
 
         edges = await self.storage.get_edges("node1", "node2")
-        self.assertEqual(edges, [(TRelation(source="node1", target="node2", description="txt"), 0)])
+        self.assertEqual(
+            edges, [(TRelation(source="node1", target="node2", description="txt"), 0)]
+        )
 
     async def test_get_edge_indices(self):
         self.storage._graph.vs.find.side_effect = lambda name: MagicMock(index=name)
-        self.storage._graph.es.select.return_value = [MagicMock(index=0), MagicMock(index=1)]
+        self.storage._graph.es.select.return_value = [
+            MagicMock(index=0),
+            MagicMock(index=1),
+        ]
 
         indices = await self.storage.get_edge_indices("node1", "node2")
         self.assertEqual(list(indices), [0, 1])
 
     async def test_get_node_by_index(self):
         node = MagicMock()
-        node.attributes.return_value = {"name": "foo", "description": "value", "type": "type"}
+        node.attributes.return_value = {
+            "name": "foo",
+            "description": "value",
+            "type": "type",
+        }
         self.storage._graph.vs.__getitem__.return_value = node
         self.storage._graph.vcount.return_value = 1
 
@@ -74,7 +90,9 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
         self.storage._graph.ecount.return_value = 1
 
         result = await self.storage.get_edge_by_index(0)
-        self.assertEqual(result, TRelation(source="node0", target="node1", **edge.attributes()))
+        self.assertEqual(
+            result, TRelation(source="node0", target="node1", **edge.attributes())
+        )
 
     async def test_upsert_node(self):
         node = TEntity(name="node1", description="value", type="type")
@@ -110,7 +128,11 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
         self.storage._graph.personalized_pagerank.return_value = [0.1, 0.2, 0.7]
 
         scores = await self.storage.score_nodes(None)
-        self.assertTrue(np.array_equal(scores.toarray(), np.array([[0.1, 0.2, 0.7]], dtype=np.float32)))
+        self.assertTrue(
+            np.array_equal(
+                scores.toarray(), np.array([[0.1, 0.2, 0.7]], dtype=np.float32)
+            )
+        )
 
     async def test_get_entities_to_relationships_map_empty_graph(self):
         self.storage._graph.vs = []
@@ -119,7 +141,9 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
 
     @patch("fast_graphrag._storage._gdb_igraph.csr_from_indices_list")
     async def test_get_entities_to_relationships_map(self, mock_csr_from_indices_list):
-        self.storage._graph.vs = [MagicMock(incident=lambda: [MagicMock(index=0), MagicMock(index=1)])]
+        self.storage._graph.vs = [
+            MagicMock(incident=lambda: [MagicMock(index=0), MagicMock(index=1)])
+        ]
         self.storage.node_count = AsyncMock(return_value=1)
         self.storage.edge_count = AsyncMock(return_value=2)
 
@@ -139,7 +163,9 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
 
     @patch("igraph.Graph.Read_Picklez")
     @patch("fast_graphrag._storage._gdb_igraph.logger")
-    async def test_insert_start_with_existing_file(self, mock_logger, mock_read_picklez):
+    async def test_insert_start_with_existing_file(
+        self, mock_logger, mock_read_picklez
+    ):
         self.storage.namespace = MagicMock()
         self.storage.namespace.get_load_path.return_value = "dummy_path"
 
@@ -157,7 +183,9 @@ class TestIGraphStorage(unittest.IsolatedAsyncioTestCase):
         await self.storage._insert_start()
 
         mock_graph.assert_called_with(directed=False)
-        mock_logger.info.assert_called_with("No data file found for graph storage 'None'. Loading empty graph.")
+        mock_logger.info.assert_called_with(
+            "No data file found for graph storage 'None'. Loading empty graph."
+        )
 
     @patch("igraph.Graph")
     @patch("fast_graphrag._storage._gdb_igraph.logger")

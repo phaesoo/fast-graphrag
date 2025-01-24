@@ -15,7 +15,9 @@ class TestBaseGraphRAG(unittest.IsolatedAsyncioTestCase):
         self.information_extraction_service = MagicMock()
         self.information_extraction_service.extract_entities_from_query = AsyncMock()
         self.state_manager = AsyncMock()
-        self.state_manager.embedding_service.embedding_dim = self.state_manager.entity_storage.embedding_dim = 1
+        self.state_manager.embedding_service.embedding_dim = (
+            self.state_manager.entity_storage.embedding_dim
+        ) = 1
 
         @dataclass
         class BaseGraphRAGNoEmbeddingValidation(BaseGraphRAG):
@@ -30,13 +32,17 @@ class TestBaseGraphRAG(unittest.IsolatedAsyncioTestCase):
         )
         self.graph_rag.llm_service = self.llm_service
         self.graph_rag.chunking_service = self.chunking_service
-        self.graph_rag.information_extraction_service = self.information_extraction_service
+        self.graph_rag.information_extraction_service = (
+            self.information_extraction_service
+        )
         self.graph_rag.state_manager = self.state_manager
 
     async def test_async_insert(self):
         self.chunking_service.extract = AsyncMock(return_value=["chunked_data"])
         self.state_manager.filter_new_chunks = AsyncMock(return_value=["new_chunks"])
-        self.information_extraction_service.extract = MagicMock(return_value=["subgraph"])
+        self.information_extraction_service.extract = MagicMock(
+            return_value=["subgraph"]
+        )
         self.state_manager.upsert = AsyncMock()
 
         await self.graph_rag.async_insert("test_content", {"meta": "data"})
@@ -48,9 +54,11 @@ class TestBaseGraphRAG(unittest.IsolatedAsyncioTestCase):
 
     @patch("fast_graphrag._graphrag.format_and_send_prompt", new_callable=AsyncMock)
     async def test_async_query(self, format_and_send_prompt):
-        self.information_extraction_service.extract_entities_from_query = AsyncMock(return_value=["entities"])
+        self.information_extraction_service.extract_entities_from_query = AsyncMock(
+            return_value=["entities"]
+        )
         self.state_manager.get_context = AsyncMock(return_value=TContext([], [], []))
-        format_and_send_prompt.return_value=(TAnswer(answer="response"), None)
+        format_and_send_prompt.return_value = (TAnswer(answer="response"), None)
 
         response = await self.graph_rag.async_query("test_query")
 

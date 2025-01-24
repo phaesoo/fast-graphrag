@@ -31,9 +31,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
         if self._graph is not None:  # type: ignore
             ig.Graph.write_graphmlz(self._graph, path + ".gz")  # type: ignore
 
-            with gzip.open(path + ".gz", 'rb') as f:
+            with gzip.open(path + ".gz", "rb") as f:
                 file_content = f.read()
-            with open(path, 'wb') as f:
+            with open(path, "wb") as f:
                 f.write(file_content)
             os.remove(path + ".gz")
 
@@ -43,7 +43,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
     async def edge_count(self) -> int:
         return self._graph.ecount()  # type: ignore
 
-    async def get_node(self, node: Union[GTNode, GTId]) -> Union[Tuple[GTNode, TIndex], Tuple[None, None]]:
+    async def get_node(
+        self, node: Union[GTNode, GTId]
+    ) -> Union[Tuple[GTNode, TIndex], Tuple[None, None]]:
         if isinstance(node, self.config.node_cls):
             node_id = node.name
         else:
@@ -94,7 +96,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
             else None
         )
 
-    async def upsert_node(self, node: GTNode, node_index: Union[TIndex, None]) -> TIndex:
+    async def upsert_node(
+        self, node: GTNode, node_index: Union[TIndex, None]
+    ) -> TIndex:
         if node_index is not None:
             if node_index >= self._graph.vcount():  # type: ignore
                 logger.error(
@@ -108,7 +112,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
         else:
             return self._graph.add_vertex(**asdict(node)).index  # type: ignore
 
-    async def upsert_edge(self, edge: GTEdge, edge_index: Union[TIndex, None]) -> TIndex:
+    async def upsert_edge(
+        self, edge: GTEdge, edge_index: Union[TIndex, None]
+    ) -> TIndex:
         if edge_index is not None:
             if edge_index >= self._graph.ecount():  # type: ignore
                 logger.error(
@@ -143,7 +149,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
             # TODO: not sure if this is the best way to get the indices of the new edges
             return list(range(self._graph.ecount() - len(indices), self._graph.ecount()))  # type: ignore
         elif edges is not None:
-            assert indices is None and attrs is None, "Cannot provide both indices and edges."
+            assert (
+                indices is None and attrs is None
+            ), "Cannot provide both indices and edges."
             edges = list(edges)
             if len(edges) == 0:
                 return []
@@ -156,7 +164,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
         else:
             return []
 
-    async def are_neighbours(self, source_node: Union[GTId, TIndex], target_node: Union[GTId, TIndex]) -> bool:
+    async def are_neighbours(
+        self, source_node: Union[GTId, TIndex], target_node: Union[GTId, TIndex]
+    ) -> bool:
         return self._graph.get_eid(source_node, target_node, directed=False, error=False) != -1  # type: ignore
 
     async def delete_edges_by_index(self, indices: Iterable[TIndex]) -> None:
@@ -167,16 +177,16 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
             logger.info("Trying to score nodes in an empty graph.")
             return csr_matrix((1, 0))
 
-        reset_prob = initial_weights.toarray().flatten() if initial_weights is not None else None
+        reset_prob = (
+            initial_weights.toarray().flatten() if initial_weights is not None else None
+        )
 
         ppr_scores = self._graph.personalized_pagerank(  # type: ignore
             damping=self.config.ppr_damping, directed=False, reset=reset_prob
         )
         ppr_scores = np.array(ppr_scores, dtype=np.float32)  # type: ignore
 
-        return csr_matrix(
-            ppr_scores.reshape(1, -1)  # type: ignore
-        )
+        return csr_matrix(ppr_scores.reshape(1, -1))  # type: ignore
 
     async def get_entities_to_relationships_map(self) -> csr_matrix:
         if len(self._graph.vs) == 0:  # type: ignore
@@ -213,7 +223,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
                     logger.error(t)
                     raise InvalidStorageError(t) from e
             else:
-                logger.info(f"No data file found for graph storage '{graph_file_name}'. Loading empty graph.")
+                logger.info(
+                    f"No data file found for graph storage '{graph_file_name}'. Loading empty graph."
+                )
                 self._graph = ig.Graph(directed=False)
         else:
             self._graph = ig.Graph(directed=False)
@@ -241,7 +253,9 @@ class IGraphStorage(BaseGraphStorage[GTNode, GTEdge, GTId]):
                 logger.error(t)
                 raise InvalidStorageError(t) from e
         else:
-            logger.warning(f"No data file found for graph storage '{graph_file_name}'. Loading empty graph.")
+            logger.warning(
+                f"No data file found for graph storage '{graph_file_name}'. Loading empty graph."
+            )
             self._graph = ig.Graph(directed=False)
 
     async def _query_done(self):

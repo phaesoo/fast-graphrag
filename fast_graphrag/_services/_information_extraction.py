@@ -1,4 +1,5 @@
 """Entity-Relationship extraction module."""
+
 import asyncio
 import re
 from dataclasses import dataclass
@@ -23,7 +24,9 @@ class TGleaningStatus(BaseModel):
 
 
 @dataclass
-class DefaultInformationExtractionService(BaseInformationExtractionService[TChunk, TEntity, TRelation, GTId]):
+class DefaultInformationExtractionService(
+    BaseInformationExtractionService[TChunk, TEntity, TRelation, GTId]
+):
     """Default entity and relationship extractor."""
 
     def extract(
@@ -35,7 +38,10 @@ class DefaultInformationExtractionService(BaseInformationExtractionService[TChun
     ) -> List[asyncio.Future[Optional[BaseGraphStorage[TEntity, TRelation, GTId]]]]:
         """Extract both entities and relationships from the given data."""
         return [
-            asyncio.create_task(self._extract(llm, document, prompt_kwargs, entity_types)) for document in documents
+            asyncio.create_task(
+                self._extract(llm, document, prompt_kwargs, entity_types)
+            )
+            for document in documents
         ]
 
     async def extract_entities_from_query(
@@ -50,19 +56,23 @@ class DefaultInformationExtractionService(BaseInformationExtractionService[TChun
             response_model=TQueryEntities,
         )
 
-        return {
-            "named": entities.named,
-            "generic": entities.generic
-        }
+        return {"named": entities.named, "generic": entities.generic}
 
     async def _extract(
-        self, llm: BaseLLMService, chunks: Iterable[TChunk], prompt_kwargs: Dict[str, str], entity_types: List[str]
+        self,
+        llm: BaseLLMService,
+        chunks: Iterable[TChunk],
+        prompt_kwargs: Dict[str, str],
+        entity_types: List[str],
     ) -> Optional[BaseGraphStorage[TEntity, TRelation, GTId]]:
         """Extract both entities and relationships from the given chunks."""
         # Extract entities and relatioships from each chunk
         try:
             chunk_graphs = await asyncio.gather(
-                *[self._extract_from_chunk(llm, chunk, prompt_kwargs, entity_types) for chunk in chunks]
+                *[
+                    self._extract_from_chunk(llm, chunk, prompt_kwargs, entity_types)
+                    for chunk in chunks
+                ]
             )
             if len(chunk_graphs) == 0:
                 return None
@@ -119,7 +129,11 @@ class DefaultInformationExtractionService(BaseInformationExtractionService[TChun
         return current_graph
 
     async def _extract_from_chunk(
-        self, llm: BaseLLMService, chunk: TChunk, prompt_kwargs: Dict[str, str], entity_types: List[str]
+        self,
+        llm: BaseLLMService,
+        chunk: TChunk,
+        prompt_kwargs: Dict[str, str],
+        entity_types: List[str],
     ) -> TGraph:
         """Extract entities and relationships from the given chunk."""
         prompt_kwargs["input_text"] = chunk.content
@@ -136,7 +150,9 @@ class DefaultInformationExtractionService(BaseInformationExtractionService[TChun
         if chunk_graph_with_gleaning:
             chunk_graph = chunk_graph_with_gleaning
 
-        _clean_entity_types = [re.sub("[ _]", "", entity_type).upper() for entity_type in entity_types]
+        _clean_entity_types = [
+            re.sub("[ _]", "", entity_type).upper() for entity_type in entity_types
+        ]
         for entity in chunk_graph.entities:
             if re.sub("[ _]", "", entity.type).upper() not in _clean_entity_types:
                 entity.type = "UNKNOWN"
@@ -147,16 +163,22 @@ class DefaultInformationExtractionService(BaseInformationExtractionService[TChun
 
         return chunk_graph
 
-    async def _merge(self, llm: BaseLLMService, graphs: List[TGraph]) -> BaseGraphStorage[TEntity, TRelation, GTId]:
+    async def _merge(
+        self, llm: BaseLLMService, graphs: List[TGraph]
+    ) -> BaseGraphStorage[TEntity, TRelation, GTId]:
         """Merge the given graphs into a single graph storage."""
-        graph_storage = IGraphStorage[TEntity, TRelation, GTId](config=IGraphStorageConfig(TEntity, TRelation))
+        graph_storage = IGraphStorage[TEntity, TRelation, GTId](
+            config=IGraphStorageConfig(TEntity, TRelation)
+        )
 
         await graph_storage.insert_start()
 
         try:
             # This is synchronous since each sub graph is inserted into the graph storage and conflicts are resolved
             for graph in graphs:
-                await self.graph_upsert(llm, graph_storage, graph.entities, graph.relationships)
+                await self.graph_upsert(
+                    llm, graph_storage, graph.entities, graph.relationships
+                )
         finally:
             await graph_storage.insert_done()
 

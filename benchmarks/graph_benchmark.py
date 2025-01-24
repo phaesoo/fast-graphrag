@@ -77,11 +77,25 @@ if __name__ == "__main__":
     load_dotenv()
 
     parser = argparse.ArgumentParser(description="GraphRAG CLI")
-    parser.add_argument("-d", "--dataset", default="2wikimultihopqa", help="Dataset to use.")
+    parser.add_argument(
+        "-d", "--dataset", default="2wikimultihopqa", help="Dataset to use."
+    )
     parser.add_argument("-n", type=int, default=0, help="Subset of corpus to use.")
-    parser.add_argument("-c", "--create", action="store_true", help="Create the graph for the given dataset.")
-    parser.add_argument("-b", "--benchmark", action="store_true", help="Benchmark the graph for the given dataset.")
-    parser.add_argument("-s", "--score", action="store_true", help="Report scores after benchmarking.")
+    parser.add_argument(
+        "-c",
+        "--create",
+        action="store_true",
+        help="Create the graph for the given dataset.",
+    )
+    parser.add_argument(
+        "-b",
+        "--benchmark",
+        action="store_true",
+        help="Benchmark the graph for the given dataset.",
+    )
+    parser.add_argument(
+        "-s", "--score", action="store_true", help="Report scores after benchmarking."
+    )
     args = parser.parse_args()
 
     print("Loading dataset...")
@@ -112,14 +126,18 @@ if __name__ == "__main__":
         )
 
         async def _query_task(query: Query) -> Dict[str, Any]:
-            answer = await grag.async_query(query.question, QueryParam(only_context=True))
+            answer = await grag.async_query(
+                query.question, QueryParam(only_context=True)
+            )
             return {
                 "question": query.question,
                 "answer": answer.response,
                 "evidence": [
-                    corpus[chunk.metadata["id"]][0]
+                    (
+                        corpus[chunk.metadata["id"]][0]
                         if isinstance(chunk.metadata["id"], int)
                         else chunk.metadata["id"]
+                    )
                     for chunk, _ in answer.context.chunks
                 ],
                 "ground_truth": [e[0] for e in query.evidence],
@@ -129,7 +147,10 @@ if __name__ == "__main__":
             await grag.state_manager.query_start()
             answers = [
                 await a
-                for a in tqdm(asyncio.as_completed([_query_task(query) for query in queries]), total=len(queries))
+                for a in tqdm(
+                    asyncio.as_completed([_query_task(query) for query in queries]),
+                    total=len(queries),
+                )
             ]
             await grag.state_manager.query_done()
             return answers
@@ -157,7 +178,9 @@ if __name__ == "__main__":
             ground_truth = answer["ground_truth"]
             predicted_evidence = answer["evidence"]
 
-            p_retrieved: float = len(set(ground_truth).intersection(set(predicted_evidence))) / len(set(ground_truth))
+            p_retrieved: float = len(
+                set(ground_truth).intersection(set(predicted_evidence))
+            ) / len(set(ground_truth))
             retrieval_scores.append(p_retrieved)
 
             if answer["question"] in questions_multihop:
